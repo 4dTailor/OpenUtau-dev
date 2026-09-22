@@ -8,6 +8,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
+using NumSharp.Utilities;
 using OpenUtau.Api;
 using OpenUtau.App.Views;
 using OpenUtau.Core;
@@ -321,10 +322,37 @@ namespace OpenUtau.App.ViewModels {
                             .ToArray(),
                     });
                     foreach (var pair in SingerManager.Inst.SingerGroups.OrderBy(kvp => kvp.Key)) {
+                        List<MenuItemViewModel> items = new List<MenuItemViewModel>();
+                        
+                        foreach (var singer in pair.Value) {
+                            string relativePath = Path.GetRelativePath(PathManager.Inst.SingersPath, singer.Location);
+                            string[] folderDepth = relativePath.Split(Path.DirectorySeparatorChar);
+                            folderDepth = folderDepth.RemoveAt(folderDepth.Length - 1);
+                            
+                            List<MenuItemViewModel> folders = new();
+                            SingerMenuItemViewModel singerMenuItem = CreateSingerMenuItem(singer);
+                            
+                            if (folderDepth.Length > 0) {
+                                foreach (var folderName in folderDepth) {
+                                    folders.Add(new MenuItemViewModel() {
+                                        Header = folderName
+                                    });
+                                }
+
+                                folders[^1].Items = new List<MenuItemViewModel>() { singerMenuItem };
+                                for (int index = folders.Count - 1; index >= 1; index--) {
+                                    folders[index - 1].Items = new List<MenuItemViewModel>() { folders[index] };
+                                }
+                                
+                                items.Add(folders[0]);
+                            } else {
+                                items.Add(singerMenuItem);
+                            }
+                        }
+                        
                         list.Add(new MenuItemViewModel() {
                             Header = $"{pair.Key} ...",
-                            Items = pair.Value
-                                .Select(CreateSingerMenuItem)
+                            Items = items
                                 .ToArray(),
                         });
                     }
