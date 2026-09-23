@@ -485,7 +485,7 @@ namespace OpenUtau.App.ViewModels {
             }
 
             
-            bool sortByFolderAndName = false; // TODO: Connect this to preferences. TRUE: Sort by folder then name, FALSE: Sort by name
+            bool sortByFolderAndName = true; // TODO: Connect this to preferences. TRUE: Sort by folder then name, FALSE: Sort by name
             
             var unsortedItems = parent.Items.ToList();
             unsortedItems.Sort((item1, item2) => String.CompareOrdinal(item1.Header, item2.Header));
