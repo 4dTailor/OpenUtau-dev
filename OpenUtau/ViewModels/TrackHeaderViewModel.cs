@@ -469,9 +469,7 @@ namespace OpenUtau.App.ViewModels {
                     List<MenuItemViewModel> mergingItemList = (parent.Items[item].Items ?? []).ToList();
 
                     if (item != lastIndexOf) {
-                        foreach (MenuItemViewModel menuItemViewModel in mergingItemList) {
-                            firstItemList = firstItemList.Prepend(menuItemViewModel).ToList();
-                        }
+                        firstItemList.Add(mergingItemList);
 
                         parent.Items[lastIndexOf].Items = firstItemList;
                         RecursiveMergeDuplicateFolders(parent.Items[lastIndexOf]);
