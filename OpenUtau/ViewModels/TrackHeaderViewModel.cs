@@ -456,11 +456,9 @@ namespace OpenUtau.App.ViewModels {
             this.RaisePropertyChanged(nameof(SingerMenuItems));
         }
 
-        private MenuItemViewModel RecursiveMergeDuplicateFolders(MenuItemViewModel parent) {
-            if (parent.Items == null || parent.Items.Count == 0) { // end node
-                return parent;
-            }
-            
+        private static MenuItemViewModel RecursiveMergeDuplicateFolders(MenuItemViewModel parent) {
+            if (parent.Items == null || parent.Items.Count == 0) { return parent; }
+
             string[] checkedChildren = new string[parent.Items.Count];
             for (int item = parent.Items.Count - 1; item >= 0; item--) {
                 checkedChildren[item] = parent.Items[item].Header ?? "";
@@ -478,15 +476,32 @@ namespace OpenUtau.App.ViewModels {
 
                         parent.Items[lastIndexOf].Items = firstItemList;
                         RecursiveMergeDuplicateFolders(parent.Items[lastIndexOf]);
-                        
+
                         parent.Items = parent.Items.ToArray().RemoveAt(item);
                         checkedChildren = checkedChildren.ToArray().RemoveAt(item);
                     }
                 }
+
                 RecursiveMergeDuplicateFolders(parent.Items[item]);
             }
+
             
-            checkedChildren = [];
+            bool sortByFolderAndName = false; // TODO: Connect this to preferences. TRUE: Sort by folder then name, FALSE: Sort by name
+            
+            var unsortedItems = parent.Items.ToList();
+            unsortedItems.Sort((item1, item2) => String.CompareOrdinal(item1.Header, item2.Header));
+            
+            List<MenuItemViewModel> sortedItems = [];
+            if (sortByFolderAndName) {
+                foreach (var group in unsortedItems.GroupBy((item) => item.Items?.Count > 0)) {
+                    sortedItems.AddRange(group);
+                }
+            } else {
+                sortedItems = unsortedItems;
+            }
+
+            parent.Items = sortedItems;
+            
             return parent;
         }
         
