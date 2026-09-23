@@ -467,8 +467,8 @@ namespace OpenUtau.App.ViewModels {
                 if (checkedChildren.Contains(parent.Items[item].Header)) {
                     // Add to first instance.
                     int firstItemIndex = checkedChildren.LastIndexOf(parent.Items[item].Header);
-                    var firstItemList = parent.Items[firstItemIndex].Items ?? [];
-                    var mergingItemList = parent.Items[item].Items ?? [];
+                    List<MenuItemViewModel> firstItemList = (parent.Items[firstItemIndex].Items ?? []).ToList();
+                    List<MenuItemViewModel> mergingItemList = (parent.Items[item].Items ?? []).ToList();
 
                     if (item != firstItemIndex) {
                         firstItemList.Add(mergingItemList);
