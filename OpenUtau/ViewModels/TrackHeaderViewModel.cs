@@ -357,8 +357,7 @@ namespace OpenUtau.App.ViewModels {
                             Items = items
                                 .ToArray(),
                         };
-                        
-                        string[] checkedChildren = [];
+
                         list.Add(RecursiveMergeDuplicateFolders(rootMenu));
                     }
                 } else {
