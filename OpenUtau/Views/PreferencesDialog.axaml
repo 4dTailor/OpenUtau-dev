@@ -88,7 +88,7 @@
               <ComboBoxItem Content="{DynamicResource prefs.channel.alpha}"/>
             </ComboBox>
           </Grid>
-          <TextBlock Classes="restart"/>
+          <TextBlock Classes="restpreferenart"/>
         </StackPanel>
         
         <!-- Playback -->
@@ -212,6 +212,10 @@
           <Grid>
             <TextBlock Text="{DynamicResource prefs.advanced.lyricshelper.brackets}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding LyricsHelperBrackets}"/>
+          </Grid>
+          <Grid>
+              <TextBlock Text="{DynamicResource prefs.advanced.singers.sortorder}" HorizontalAlignment="Left"/>
+              <ToggleSwitch IsChecked="{Binding SingersSortFoldersFirst}"/>
           </Grid>
         </StackPanel>
 

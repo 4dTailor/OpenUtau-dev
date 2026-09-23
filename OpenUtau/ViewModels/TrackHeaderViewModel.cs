@@ -483,13 +483,11 @@ namespace OpenUtau.App.ViewModels {
             }
 
             
-            bool sortByFolderAndName = true; // TODO: Connect this to preferences. TRUE: Sort by folder then name, FALSE: Sort by name
-            
             var unsortedItems = parent.Items.ToList();
             unsortedItems.Sort((item1, item2) => String.CompareOrdinal(item1.Header, item2.Header));
             
             List<MenuItemViewModel> sortedItems = [];
-            if (sortByFolderAndName) {
+            if (Preferences.Default.SingersSortFoldersFirst) {
                 foreach (var group in unsortedItems.GroupBy((item) => item.Items?.Count > 0)) {
                     sortedItems.AddRange(group);
                 }
