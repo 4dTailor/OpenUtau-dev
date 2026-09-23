@@ -461,14 +461,14 @@ namespace OpenUtau.App.ViewModels {
             string[] checkedChildren = new string[parent.Items.Count];
             for (int item = parent.Items.Count - 1; item >= 0; item--) {
                 checkedChildren[item] = parent.Items[item].Header ?? "";
-                // check item is duplicate
-                if (checkedChildren.Contains(parent.Items[item].Header)) {
-                    // Add to first instance.
+                if (checkedChildren.Contains(parent.Items[item].Header)) { // check if item is duplicate
+                    // Add to last instance.
                     int lastIndexOf = checkedChildren.LastIndexOf(parent.Items[item].Header);
-                    List<MenuItemViewModel> firstItemList = (parent.Items[lastIndexOf].Items ?? []).ToList();
-                    List<MenuItemViewModel> mergingItemList = (parent.Items[item].Items ?? []).ToList();
 
-                    if (item != lastIndexOf) {
+                    if (item != lastIndexOf) { // check that items are not the same
+                        List<MenuItemViewModel> firstItemList = (parent.Items[lastIndexOf].Items ?? []).ToList();
+                        List<MenuItemViewModel> mergingItemList = (parent.Items[item].Items ?? []).ToList();
+                        
                         firstItemList.Add(mergingItemList);
 
                         parent.Items[lastIndexOf].Items = firstItemList;
