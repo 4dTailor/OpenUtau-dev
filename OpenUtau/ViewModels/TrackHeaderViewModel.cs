@@ -8,6 +8,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
+using DynamicData;
+using DynamicData.Kernel;
 using NumSharp.Utilities;
 using OpenUtau.Api;
 using OpenUtau.App.Views;
@@ -349,12 +351,15 @@ namespace OpenUtau.App.ViewModels {
                                 items.Add(singerMenuItem);
                             }
                         }
-                        
-                        list.Add(new MenuItemViewModel() {
+
+                        MenuItemViewModel rootMenu = new MenuItemViewModel() {
                             Header = $"{pair.Key} ...",
                             Items = items
                                 .ToArray(),
-                        });
+                        };
+                        
+                        string[] checkedChildren = [];
+                        list.Add(RecursiveMergeDuplicateFolders(rootMenu));
                     }
                 } else {
                     list.Add(new MenuItemViewModel() {
@@ -449,6 +454,38 @@ namespace OpenUtau.App.ViewModels {
             SingerMenuItems = items;
             singersMenuDirty = false;
             this.RaisePropertyChanged(nameof(SingerMenuItems));
+        }
+
+        private MenuItemViewModel RecursiveMergeDuplicateFolders(MenuItemViewModel parent) {
+            if (parent.Items == null || parent.Items.Count == 0) { // end node
+                return parent;
+            }
+            
+            string[] checkedChildren = new string[parent.Items.Count];
+            for (int item = parent.Items.Count - 1; item >= 0; item--) {
+                // check item is duplicate
+                if (checkedChildren.Contains(parent.Items[item].Header)) {
+                    // Add to first instance.
+                    int firstItemIndex = checkedChildren.LastIndexOf(parent.Items[item].Header);
+                    var firstItemList = parent.Items[firstItemIndex].Items ?? [];
+                    var mergingItemList = parent.Items[item].Items ?? [];
+
+                    if (item != firstItemIndex) {
+                        firstItemList.Add(mergingItemList);
+                        parent.Items[firstItemIndex].Items = firstItemList;
+
+                        parent.Items = parent.Items.ToArray().RemoveAt(item);
+                        checkedChildren = checkedChildren.ToArray().RemoveAt(item);
+                    }
+                }
+                RecursiveMergeDuplicateFolders(parent.Items[item]);
+                if (!checkedChildren.Contains(parent.Items[item].Header)) {
+                    checkedChildren[item] = parent.Items[item].Header ?? "";
+                }
+            }
+            
+            checkedChildren = [];
+            return parent;
         }
         
         public void RefreshSingers() {
