@@ -463,25 +463,27 @@ namespace OpenUtau.App.ViewModels {
             
             string[] checkedChildren = new string[parent.Items.Count];
             for (int item = parent.Items.Count - 1; item >= 0; item--) {
+                checkedChildren[item] = parent.Items[item].Header ?? "";
                 // check item is duplicate
                 if (checkedChildren.Contains(parent.Items[item].Header)) {
                     // Add to first instance.
-                    int firstItemIndex = checkedChildren.LastIndexOf(parent.Items[item].Header);
-                    List<MenuItemViewModel> firstItemList = (parent.Items[firstItemIndex].Items ?? []).ToList();
+                    int lastIndexOf = checkedChildren.LastIndexOf(parent.Items[item].Header);
+                    List<MenuItemViewModel> firstItemList = (parent.Items[lastIndexOf].Items ?? []).ToList();
                     List<MenuItemViewModel> mergingItemList = (parent.Items[item].Items ?? []).ToList();
 
-                    if (item != firstItemIndex) {
-                        firstItemList.Add(mergingItemList);
-                        parent.Items[firstItemIndex].Items = firstItemList;
+                    if (item != lastIndexOf) {
+                        foreach (MenuItemViewModel menuItemViewModel in mergingItemList) {
+                            firstItemList = firstItemList.Prepend(menuItemViewModel).ToList();
+                        }
 
+                        parent.Items[lastIndexOf].Items = firstItemList;
+                        RecursiveMergeDuplicateFolders(parent.Items[lastIndexOf]);
+                        
                         parent.Items = parent.Items.ToArray().RemoveAt(item);
                         checkedChildren = checkedChildren.ToArray().RemoveAt(item);
                     }
                 }
                 RecursiveMergeDuplicateFolders(parent.Items[item]);
-                if (!checkedChildren.Contains(parent.Items[item].Header)) {
-                    checkedChildren[item] = parent.Items[item].Header ?? "";
-                }
             }
             
             checkedChildren = [];
