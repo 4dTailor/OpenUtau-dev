@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -325,9 +326,24 @@ namespace OpenUtau.App.ViewModels {
                     });
                     foreach (var pair in SingerManager.Inst.SingerGroups.OrderBy(kvp => kvp.Key)) {
                         List<MenuItemViewModel> items = new List<MenuItemViewModel>();
-                        
+
                         foreach (var singer in pair.Value) {
-                            string relativePath = Path.GetRelativePath(PathManager.Inst.SingersPath, singer.Location);
+                            string relativePath = "";
+
+                            foreach (string singerPath in PathManager.Inst.SingersPaths) {
+                                if (string.IsNullOrWhiteSpace(singerPath)) continue;
+                                if (!Directory.Exists(singerPath)) continue;
+                                if (!singer.Location.Contains(singerPath)) continue;                               
+                                
+                                relativePath = Path.GetRelativePath(singerPath, singer.Location);
+                                break;
+                            }
+
+                            if (string.IsNullOrEmpty(relativePath)) {
+                                Log.Warning("{SingerName} could not be found in the singer paths, skipping.", singer.Name);
+                                continue;
+                            }
+
                             string[] folderDepth = relativePath.Split(Path.DirectorySeparatorChar);
                             folderDepth = folderDepth.RemoveAt(folderDepth.Length - 1);
                             
