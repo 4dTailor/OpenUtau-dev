@@ -1856,7 +1856,7 @@ namespace OpenUtau.App.Views {
                 var res = await MessageBox.Show(
                     this,
                     ThemeManager.GetString("dialogs.splitpart.intheway"),
-                    ThemeManager.GetString("dialogs.splitpart.caption"),
+                    string.Format(ThemeManager.GetString("dialogs.splitpart.caption"), part.name),
                     MessageBox.MessageBoxButtons.YesNo);
                 if (res == MessageBox.MessageBoxResult.No) { return; }
                 do {
