@@ -103,7 +103,7 @@ namespace OpenUtau.App.Views {
             PartReplaceAudioCommand = ReactiveCommand.Create<UPart>(part => ReplaceAudio(part));
             PartTranscribeCommand = ReactiveCommand.Create<UPart>(part => Transcribe(part));
             PartMergeCommand = ReactiveCommand.Create<UPart>(part => MergePart(part));
-            PartSplitCommand = ReactiveCommand.Create<UPart>(async part =>  await SplitPart(part));
+            PartSplitCommand = ReactiveCommand.Create<UPart>(async part => await SplitParts());
 
             AddHandler(DragDrop.DropEvent, OnDrop);
 
@@ -1839,6 +1839,14 @@ namespace OpenUtau.App.Views {
             DocManager.Inst.ExecuteCmd(new AddPartCommand(DocManager.Inst.Project, mergedPart));
             DocManager.Inst.EndUndoGroup();
         }
+
+        async Task SplitParts() {
+            UPart[] selectedParts = viewModel.TracksViewModel.Parts.Where(viewModel.TracksViewModel.SelectedParts.Contains).ToArray();
+            foreach (var part in selectedParts) {
+                await SplitPart(part);
+            }
+        }
+        
         async Task SplitPart(UPart part) {
             int tick = DocManager.Inst.playPosTick;
             if (part.position >= tick || part.End <= tick) return;
