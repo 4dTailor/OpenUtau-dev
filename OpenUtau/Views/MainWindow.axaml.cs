@@ -1842,6 +1842,7 @@ namespace OpenUtau.App.Views {
 
         async Task SplitParts() {
             UPart[] selectedParts = viewModel.TracksViewModel.Parts.Where(viewModel.TracksViewModel.SelectedParts.Contains).ToArray();
+            selectedParts = selectedParts.OrderBy((part) => part.trackNo).ToArray();
             List<int?> partSplitTick = [];
             foreach (var part in selectedParts) {
                 int tick = DocManager.Inst.playPosTick;
