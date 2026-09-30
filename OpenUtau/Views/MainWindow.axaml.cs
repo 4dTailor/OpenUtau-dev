@@ -1842,27 +1842,49 @@ namespace OpenUtau.App.Views {
 
         async Task SplitParts() {
             UPart[] selectedParts = viewModel.TracksViewModel.Parts.Where(viewModel.TracksViewModel.SelectedParts.Contains).ToArray();
+            List<int?> partSplitTick = [];
             foreach (var part in selectedParts) {
-                await SplitPart(part);
+                int tick = DocManager.Inst.playPosTick;
+                if (part is not UVoicePart vp) { continue; }
+                var notesInTheWay = vp.notes.Where(n => (n.position < tick - vp.position) && (n.End > tick - vp.position));
+                
+                if (notesInTheWay.Any()) {
+                    var res = await MessageBox.Show(
+                        this,
+                        ThemeManager.GetString("dialogs.splitpart.intheway"),
+                        string.Format(ThemeManager.GetString("dialogs.splitpart.caption"), part.name),
+                        MessageBox.MessageBoxButtons.YesNo);
+                    if (res == MessageBox.MessageBoxResult.No) { 
+                        partSplitTick.Add(null);
+                        continue;
+                    }
+
+                    do {
+                        tick = vp.position + notesInTheWay.Max(n => n.End);
+                        notesInTheWay = vp.notes.Where(n =>
+                            (n.position < tick - vp.position) && (n.End > tick - vp.position));
+                    } while (notesInTheWay.Any());
+                }
+                partSplitTick.Add(tick);
             }
+            
+            DocManager.Inst.StartUndoGroup();
+            for (int i = 0; i < partSplitTick.Count; i++) {
+                if (partSplitTick[i] == null) continue;
+                SplitPart(selectedParts[i], (int) partSplitTick[i]!);
+            }
+            DocManager.Inst.EndUndoGroup();
         }
         
-        async Task SplitPart(UPart part) {
-            int tick = DocManager.Inst.playPosTick;
+        
+        // Splits the parts at the tick, does nothing if any notes exist within the tick
+        void SplitPart(UPart part, int tick) {
             if (part.position >= tick || part.End <= tick) return;
             if (part is not UVoicePart vp) return;
             var notesInTheWay = vp.notes.Where(n => (n.position < tick - vp.position) && (n.End > tick - vp.position));
             if (notesInTheWay.Any()) {
-                var res = await MessageBox.Show(
-                    this,
-                    ThemeManager.GetString("dialogs.splitpart.intheway"),
-                    string.Format(ThemeManager.GetString("dialogs.splitpart.caption"), part.name),
-                    MessageBox.MessageBoxButtons.YesNo);
-                if (res == MessageBox.MessageBoxResult.No) { return; }
-                do {
-                    tick = vp.position + notesInTheWay.Max(n => n.End);
-                    notesInTheWay = vp.notes.Where(n => (n.position < tick - vp.position) && (n.End > tick - vp.position));
-                } while (notesInTheWay.Any());
+                Log.Warning("{PartName} contains a note at Tick {Tick}, doing nothing.", part.DisplayName, tick);
+                return;
             }
 
             static SortedSet<UNote> GetNotes(IEnumerable<UNote> notes, int relTick, bool after) => after
@@ -1903,13 +1925,12 @@ namespace OpenUtau.App.Views {
                 curves = curvesAfter,
                 Duration = vp.End - tick
             };
-
-            DocManager.Inst.StartUndoGroup();
+            
             DocManager.Inst.ExecuteCmd(new RemovePartCommand(DocManager.Inst.Project, vp));
             DocManager.Inst.ExecuteCmd(new AddPartCommand(DocManager.Inst.Project, firstPart));
             DocManager.Inst.ExecuteCmd(new AddPartCommand(DocManager.Inst.Project, secondPart));
-            DocManager.Inst.EndUndoGroup();
         }
+        
         public async void OnWelcomeRecent(object sender, PointerPressedEventArgs args) {
             if (sender is StackPanel panel &&
                 panel.DataContext is RecentFileInfo fileInfo) {
