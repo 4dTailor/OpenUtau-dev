@@ -326,45 +326,48 @@ namespace OpenUtau.App.ViewModels {
                     });
                     foreach (var pair in SingerManager.Inst.SingerGroups.OrderBy(kvp => kvp.Key)) {
                         List<MenuItemViewModel> items = new List<MenuItemViewModel>();
+                        if (!Preferences.Default.SingerSelectionUsesFolders) {
+                            items.Add(pair.Value.Select(CreateSingerMenuItem));
+                        } else {
+                            foreach (var singer in pair.Value) {
+                                string relativePath = "";
 
-                        foreach (var singer in pair.Value) {
-                            string relativePath = "";
-
-                            foreach (string singerPath in PathManager.Inst.SingersPaths) {
-                                if (string.IsNullOrWhiteSpace(singerPath)) continue;
-                                if (!Directory.Exists(singerPath)) continue;
-                                if (!singer.Location.Contains(singerPath)) continue;                               
+                                foreach (string singerPath in PathManager.Inst.SingersPaths) {
+                                    if (string.IsNullOrWhiteSpace(singerPath)) continue;
+                                    if (!Directory.Exists(singerPath)) continue;
+                                    if (!singer.Location.Contains(singerPath)) continue;                               
                                 
-                                relativePath = Path.GetRelativePath(singerPath, singer.Location);
-                                break;
-                            }
-
-                            if (string.IsNullOrEmpty(relativePath)) {
-                                Log.Warning("{SingerName} could not be found in the singer paths, skipping.", singer.Name);
-                                continue;
-                            }
-
-                            string[] folderDepth = relativePath.Split(Path.DirectorySeparatorChar);
-                            folderDepth = folderDepth.RemoveAt(folderDepth.Length - 1);
-                            
-                            List<MenuItemViewModel> folders = new();
-                            SingerMenuItemViewModel singerMenuItem = CreateSingerMenuItem(singer);
-                            
-                            if (folderDepth.Length > 0) {
-                                foreach (var folderName in folderDepth) {
-                                    folders.Add(new MenuItemViewModel() {
-                                        Header = folderName
-                                    });
+                                    relativePath = Path.GetRelativePath(singerPath, singer.Location);
+                                    break;
                                 }
 
-                                folders[^1].Items = new List<MenuItemViewModel>() { singerMenuItem };
-                                for (int index = folders.Count - 1; index >= 1; index--) {
-                                    folders[index - 1].Items = new List<MenuItemViewModel>() { folders[index] };
+                                if (string.IsNullOrEmpty(relativePath)) {
+                                    Log.Warning("{SingerName} could not be found in the singer paths, skipping.", singer.Name);
+                                    continue;
                                 }
+
+                                string[] folderDepth = relativePath.Split(Path.DirectorySeparatorChar);
+                                folderDepth = folderDepth.RemoveAt(folderDepth.Length - 1);
+                            
+                                List<MenuItemViewModel> folders = new();
+                                SingerMenuItemViewModel singerMenuItem = CreateSingerMenuItem(singer);
+                            
+                                if (folderDepth.Length > 0) {
+                                    foreach (var folderName in folderDepth) {
+                                        folders.Add(new MenuItemViewModel() {
+                                            Header = folderName
+                                        });
+                                    }
+
+                                    folders[^1].Items = new List<MenuItemViewModel>() { singerMenuItem };
+                                    for (int index = folders.Count - 1; index >= 1; index--) {
+                                        folders[index - 1].Items = new List<MenuItemViewModel>() { folders[index] };
+                                    }
                                 
-                                items.Add(folders[0]);
-                            } else {
-                                items.Add(singerMenuItem);
+                                    items.Add(folders[0]);
+                                } else {
+                                    items.Add(singerMenuItem);
+                                } 
                             }
                         }
 

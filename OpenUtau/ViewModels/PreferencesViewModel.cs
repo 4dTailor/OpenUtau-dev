@@ -83,6 +83,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool LyricsHelperBrackets { get; set; }
         [Reactive] public partial bool PenPlusDefault { get; set; }
         [Reactive] public partial bool SingersSortFoldersFirst { get; set; }
+        [Reactive] public partial bool SingerSelectionUsesFolders { get; set; }
 
         // Render
         [Reactive] public partial bool PreRender { get; set; }
@@ -241,6 +242,7 @@ namespace OpenUtau.App.ViewModels {
             LyricsHelper = LyricsHelpers.FirstOrDefault(option => option.klass.Equals(ActiveLyricsHelper.Inst.GetPreferred()));
             LyricsHelperBrackets = Preferences.Default.LyricsHelperBrackets;
             SingersSortFoldersFirst = Preferences.Default.SingersSortFoldersFirst;
+            SingerSelectionUsesFolders = Preferences.Default.SingerSelectionUsesFolders;
             OtoEditor = Preferences.Default.OtoEditor;
             RememberMid = Preferences.Default.RememberMid;
             RememberUst = Preferences.Default.RememberUst;
@@ -414,6 +416,11 @@ namespace OpenUtau.App.ViewModels {
             PersistOn(this.WhenAnyValue(vm => vm.SingersSortFoldersFirst),
                 sortOrder => {
                     Preferences.Default.SingersSortFoldersFirst = sortOrder;
+                    TrackHeaderViewModel.InvalidateSingerMenuCache();
+                });
+            PersistOn(this.WhenAnyValue(vm => vm.SingerSelectionUsesFolders),
+                useFolders => {
+                    Preferences.Default.SingerSelectionUsesFolders = useFolders;
                     TrackHeaderViewModel.InvalidateSingerMenuCache();
                 });
             PersistOn(this.WhenAnyValue(vm => vm.OtoEditor),

@@ -217,6 +217,10 @@
               <TextBlock Text="{DynamicResource prefs.advanced.singers.sortorder}" HorizontalAlignment="Left"/>
               <ToggleSwitch IsChecked="{Binding SingersSortFoldersFirst}"/>
           </Grid>
+          <Grid>
+              <TextBlock Text="{DynamicResource prefs.advanced.singers.usefolders}" HorizontalAlignment="Left"/>
+              <ToggleSwitch IsChecked="{Binding SingerSelectionUsesFolders}"/>
+          </Grid>
         </StackPanel>
 
         <!-- Rendering -->
