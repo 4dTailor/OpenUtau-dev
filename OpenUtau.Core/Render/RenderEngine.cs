@@ -20,7 +20,7 @@ namespace OpenUtau.Core.Render {
         Task pending = null;
         double pendingProgress;
         string pendingInfo = string.Empty;
-        public PartId? partId = null;
+        public PartId? pendingPartId = null;
 
         internal bool DispatchInFlight => pending != null && !pending.IsCompleted;
 
@@ -57,15 +57,13 @@ namespace OpenUtau.Core.Render {
         private void Dispatch() {
             double progress;
             string info;
+            PartId? partId;
             lock (this) {
                 progress = pendingProgress;
                 info = pendingInfo;
+                partId = pendingPartId;
             }
-            DocManager.Inst.ExecuteCmd(new ProgressBarNotification(progress, info));
-            if (partId != null) {
-                Log.Error("Progress Policy");
-                DocManager.Inst.ExecuteCmd(new PartProgressBarNotification(progress, info, ((PartId) partId)!));  
-            }
+            DocManager.Inst.ExecuteCmd(new ProgressBarNotification(progress, info, partId));
             lock (this) {
                 // A newer update piled up while dispatching: this task's work is
                 // done, hand the slot to a follow-up. The restart decision lives
@@ -362,7 +360,7 @@ namespace OpenUtau.Core.Render {
                 }
                 var phrase = tuple.phrase;
                 var request = tuple.request;
-                progress.partId = request.part.Id;
+                progress.pendingPartId = request.part.Id;
                 RealCurveUpdate[]? publishedUpdates = null;
                 var renderEvents = phrase.renderer.SupportsRealCurve
                     ? new RenderPhraseEvents(realCurves => {
@@ -442,7 +440,7 @@ namespace OpenUtau.Core.Render {
                 }
             }
 
-            progress.partId = null;
+            progress.pendingPartId = null;
             progress.Clear();
             // Immediate final refresh once the pass is done.
             DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());

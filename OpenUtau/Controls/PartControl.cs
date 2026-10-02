@@ -171,8 +171,8 @@ namespace OpenUtau.App.Controls {
                         InvalidateVisual();
                     }
                 }, CancellationToken.None, TaskContinuationOptions.None, scheduler);
-                renderProgress = 1f;
             }
+            renderProgress = 1f;
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
@@ -212,10 +212,9 @@ namespace OpenUtau.App.Controls {
         
         public override void Render(DrawingContext context) {
             var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
-            var renderingBackgroundBrush = ThemeManager.NeutralAccentBrush;
+            var renderingBackgroundBrush = ThemeManager.AccentBrush1Semi;
             
             // Background
-            //Log.Information(renderProgress.ToString(CultureInfo.CurrentCulture));
             double split = Single.Lerp(1, (float)(Width - 1), (float) renderProgress);
             
             context.DrawRectangle(renderingBackgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);

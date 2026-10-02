@@ -184,21 +184,13 @@ namespace OpenUtau.Core {
     public class ProgressBarNotification : UNotification {
         public double Progress;
         public string Info;
+        public PartId? PartId;
         public override bool Silent => true;
-        public ProgressBarNotification(double progress, string info) {
+        public ProgressBarNotification(double progress, string info, PartId? partId = null) {
             Progress = progress;
             Info = info;
-        }
-        public override string ToString() => $"Set progress {Progress} {Info}";
-    }
-
-    public class PartProgressBarNotification : ProgressBarNotification {
-        public PartId PartId;
-        
-        public PartProgressBarNotification(double progress, string info, PartId partId) : base(progress, info) {
             PartId = partId;
         }
-
         public override string ToString() => $"Set progress {Progress} {Info}";
     }
 
