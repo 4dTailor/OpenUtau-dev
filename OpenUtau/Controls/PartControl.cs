@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
@@ -131,6 +132,7 @@ namespace OpenUtau.App.Controls {
         private double pianoRollViewTickOffset;
         private double pianoRollViewViewportTicks;
         private Geometry pointGeometry;
+        private double renderProgress;
 
         public readonly UPart part;
         private readonly PartsCanvas partsCanvas;
@@ -169,6 +171,7 @@ namespace OpenUtau.App.Controls {
                         InvalidateVisual();
                     }
                 }, CancellationToken.None, TaskContinuationOptions.None, scheduler);
+                renderProgress = 1f;
             }
         }
 
@@ -206,12 +209,18 @@ namespace OpenUtau.App.Controls {
                 FadeOut = wavePart.fadeout;
             }
         }
-
+        
         public override void Render(DrawingContext context) {
             var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
+            var renderingBackgroundBrush = ThemeManager.NeutralAccentBrush;
+            
             // Background
-            context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
-
+            //Log.Information(renderProgress.ToString(CultureInfo.CurrentCulture));
+            double split = Single.Lerp(1, (float)(Width - 1), (float) renderProgress);
+            
+            context.DrawRectangle(renderingBackgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+            context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, split - 1, Height - 1), 4, 4);
+            
             // Text
             var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
             using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
@@ -374,6 +383,8 @@ namespace OpenUtau.App.Controls {
         }
 
         public void Report(int value) {
+            renderProgress = value * 0.0001f;
+            InvalidateVisual();
         }
 
         public void Dispose() {

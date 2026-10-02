@@ -2073,6 +2073,17 @@ namespace OpenUtau.App.Views {
         }
 
         public void OnNext(UCommand cmd, bool isUndo) {
+              var partControls = partsCanvas.Children.Where(control => control is PartControl).ToArray();
+
+            if (cmd is PartProgressBarNotification progressBarNotification) {
+                for (int partIndex = 0; partIndex < partControls.Length; partIndex++) {
+                    PartControl partControl = (partControls[partIndex] as PartControl)!;
+                    if (partControl.part.Id.Equals(progressBarNotification.PartId)) {
+                        partControl.Report((int)(progressBarNotification.Progress * 100));
+                    }
+                }
+            }
+            
             if (cmd is ErrorMessageNotification notif) {
                 switch (notif.e) {
                     case Core.Render.NoResamplerException:

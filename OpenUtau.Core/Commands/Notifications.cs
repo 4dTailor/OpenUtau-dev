@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using NAudio.CoreAudioApi;
+using OpenUtau.Core.Pipeline;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 
@@ -187,6 +189,16 @@ namespace OpenUtau.Core {
             Progress = progress;
             Info = info;
         }
+        public override string ToString() => $"Set progress {Progress} {Info}";
+    }
+
+    public class PartProgressBarNotification : ProgressBarNotification {
+        public PartId PartId;
+        
+        public PartProgressBarNotification(double progress, string info, PartId partId) : base(progress, info) {
+            PartId = partId;
+        }
+
         public override string ToString() => $"Set progress {Progress} {Info}";
     }
 
