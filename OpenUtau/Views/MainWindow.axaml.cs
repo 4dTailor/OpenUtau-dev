@@ -1869,6 +1869,7 @@ namespace OpenUtau.App.Views {
                 partSplitTick.Add(tick);
             }
             
+            if (partSplitTick.All(tick => tick == null)) return;
             DocManager.Inst.StartUndoGroup();
             for (int i = 0; i < partSplitTick.Count; i++) {
                 if (partSplitTick[i] == null) continue;
