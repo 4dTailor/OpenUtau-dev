@@ -347,7 +347,17 @@ namespace OpenUtau.Core.Render {
             } else if (focusPart != null || focusTick >= 0) {
                 tupleArray = OrderForPreRender(tupleArray);
             }
-            var progress = new Progress(tupleArray.Sum(t => t.phrase.phones.Length));
+            
+            // Group requests by parts;
+            var groupedRequests = tupleArray.ToArray().GroupBy(tuple => tuple.request.part.Id);
+            var partProgressList = new List<Progress>();
+            
+            foreach (var group in groupedRequests) {
+                var tempProgress = new Progress(group.ToArray().Sum(t => t.phrase.phones.Length));
+                tempProgress.pendingPartId = group.Key;
+                partProgressList.Add(tempProgress);
+            }
+            
             // Only full-project passes (pre-render / export) maintain the real-curve coverage
             // invariant. Partial playback passes must not trim curves outside their tick window.
             bool maintainCoverage = startTick == 0 && endTick == -1;
@@ -360,7 +370,7 @@ namespace OpenUtau.Core.Render {
                 }
                 var phrase = tuple.phrase;
                 var request = tuple.request;
-                progress.pendingPartId = request.part.Id;
+                var progress = partProgressList.First(p => p.pendingPartId.Equals(request.part.Id));
                 RealCurveUpdate[]? publishedUpdates = null;
                 var renderEvents = phrase.renderer.SupportsRealCurve
                     ? new RenderPhraseEvents(realCurves => {
@@ -439,9 +449,11 @@ namespace OpenUtau.Core.Render {
                     DocManager.Inst.ExecuteCmd(new PartRenderedNotification(request.part));
                 }
             }
-
-            progress.pendingPartId = null;
-            progress.Clear();
+            foreach (var progress in partProgressList) {
+                progress.pendingPartId = null; // Clear pendingPartId to stop part background resetting.
+                progress.Clear();
+            }
+            
             // Immediate final refresh once the pass is done.
             DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
         }

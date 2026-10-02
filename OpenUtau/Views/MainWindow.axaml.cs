@@ -2073,7 +2073,7 @@ namespace OpenUtau.App.Views {
         }
 
         public void OnNext(UCommand cmd, bool isUndo) {
-              var partControls = partsCanvas.Children.Where(control => control is PartControl).ToArray();
+            var partControls = partsCanvas.Children.Where(control => control is PartControl).ToArray();
 
             if (cmd is ProgressBarNotification progressBarNotification) {
                 for (int partIndex = 0; partIndex < partControls.Length; partIndex++) {
@@ -2081,6 +2081,7 @@ namespace OpenUtau.App.Views {
                     if (progressBarNotification.PartId == null) break;
                     
                     if (partControl.part.Id.Equals(progressBarNotification.PartId)) {
+                        Log.Information("Part {partname} rendered at {progress}", partControl.part.DisplayName, progressBarNotification.Progress); //TODO: Remove this, or the Debug Window will be full of rendering statuses.
                         partControl.Report((int)(progressBarNotification.Progress * 100));
                     }
                 }
