@@ -1877,7 +1877,6 @@ namespace OpenUtau.App.Views {
             DocManager.Inst.EndUndoGroup();
         }
         
-        
         // Splits the parts at the tick, does nothing if any notes exist within the tick
         void SplitPart(UPart part, int tick) {
             if (part.position >= tick || part.End <= tick) return;
