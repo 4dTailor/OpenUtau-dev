@@ -19,7 +19,7 @@ using ReactiveUI.Primitives;
 using Serilog;
 
 namespace OpenUtau.App.Controls {
-    class PartControl : Control, IDisposable, IProgress<int>, ICmdSubscriber {
+    class PartControl : Control, IDisposable, IProgress<int[]>, ICmdSubscriber {
         public static readonly DirectProperty<PartControl, double> TickWidthProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(TickWidth),
@@ -134,7 +134,7 @@ namespace OpenUtau.App.Controls {
         private double pianoRollViewTickOffset;
         private double pianoRollViewViewportTicks;
         private Geometry pointGeometry;
-        private double renderProgress;
+
 
         public readonly UPart part;
         private readonly PartsCanvas partsCanvas;
@@ -143,6 +143,9 @@ namespace OpenUtau.App.Controls {
         private List<IDisposable> unbinds = new List<IDisposable>();
         private WriteableBitmap? bitmap;
         private int[] bitmapData;
+        private readonly List<int> phonemeRenderPositions = [];
+        private int renderPhonemeIndex = 0;
+        private int renderProgress = 0;
 
         public PartControl(UPart part, PartsCanvas canvas) {
             this.part = part;
@@ -176,8 +179,6 @@ namespace OpenUtau.App.Controls {
                     }
                 }, CancellationToken.None, TaskContinuationOptions.None, scheduler);
             }
-            
-            renderProgress = 1f;
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
@@ -216,26 +217,22 @@ namespace OpenUtau.App.Controls {
         }
         
         public override void Render(DrawingContext context) {
-            var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
-            var renderingBackgroundBrush = ThemeManager.AccentBrush1Semi;
-            
-            // Background
-            double split = Single.Lerp(1, (float)(Width - 1), (float) renderProgress);
-            
-            context.DrawRectangle(renderingBackgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
-            context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, split - 1, Height - 1), 4, 4);
-            
-            // Text
-            var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
-            using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
-                context.DrawRectangle(new SolidColorBrush(new Color(0, 0, 0, 0), 0), null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
-                textLayout.Draw(context, new Point());
-            }
-
+            phonemeRenderPositions.Clear();
             if (part == null) {
+                RenderBackground(context, Width - 1);
                 return;
             }
             if (part is UVoicePart voicePart) {
+                // Background
+                double split;
+                if (renderPhonemeIndex == 0 || renderProgress >= 100 || renderProgress <= 0) {
+                    split = Width - 1;
+                } else {
+                    split = voicePart.phonemes[renderPhonemeIndex - 1].position * tickWidth;
+                }
+
+                RenderBackground(context, split);
+                
                 // Notes
                 if (voicePart.notes.Count > 0) {
                     int maxTone = voicePart.notes.Max(note => note.tone);
@@ -252,6 +249,7 @@ namespace OpenUtau.App.Controls {
                         context.DrawLine(notePen, start, end);
                     }
                 }
+                
                 // Highlight
                 if (voicePart == partsCanvas.PianoRollOpenPart && pianoRollViewViewportTicks > 0) {
                     const double inset = 1;
@@ -269,6 +267,9 @@ namespace OpenUtau.App.Controls {
                     }
                 }
             } else if (part is UWavePart wavePart) {
+                // Background
+                RenderBackground(context, Width - 1);
+                
                 // Waveform
                 try {
                     DrawWaveform(wavePart, GetBitmap(ViewWidth));
@@ -298,6 +299,22 @@ namespace OpenUtau.App.Controls {
             }
         }
 
+        private void RenderBackground(DrawingContext context, double splitPosition) {
+            var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
+            var renderingBackgroundBrush = ThemeManager.AccentBrush1Semi;
+            
+            // Background
+            context.DrawRectangle(renderingBackgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+            context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, splitPosition - 1, Height - 1), 4, 4);
+            
+            // Text
+            var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
+            using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
+                context.DrawRectangle(new SolidColorBrush(new Color(0, 0, 0, 0), 0), null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
+                textLayout.Draw(context, new Point());
+            }
+        }
+        
         private WriteableBitmap GetBitmap(double width) {
             int w = 128 * (int)(width / 128 + 1);
             if (bitmap == null || bitmap.Size.Width < w) {
@@ -386,8 +403,9 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        public void Report(int value) {
-            renderProgress = value * 0.0001f;
+        public void Report(int[] value) {
+            renderPhonemeIndex = value[0];
+            renderProgress = value[1];
             InvalidateVisual();
         }
 
@@ -403,8 +421,7 @@ namespace OpenUtau.App.Controls {
                 
             if (cmd is ProgressBarNotification progressBarNotification) {
                 if (part.Id.Equals(progressBarNotification.PartId)) {
-                    Log.Information("Part {partname} render at {progress}%", part.DisplayName, (int) (progressBarNotification.Progress));
-                    Report((int)(progressBarNotification.Progress * 100));
+                    Report([progressBarNotification.PhonemeIndex, (int)progressBarNotification.Progress]);
                 }
             }
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenUtau.Core.SignalChain;
@@ -9,6 +10,7 @@ using OpenUtau.Core.Util;
 using OpenUtau.Classic;
 using OpenUtau.Core.Pipeline;
 using Serilog;
+using Serilog.Core;
 
 namespace OpenUtau.Core.Render {
     public class Progress {
@@ -58,13 +60,26 @@ namespace OpenUtau.Core.Render {
             double progress;
             string info;
             PartId? partId;
+            int phonemeIndex;
             lock (this) {
                 progress = pendingProgress;
                 info = pendingInfo;
                 partId = pendingPartId;
+                phonemeIndex = completed;
             }
-            
-            DocManager.Inst.ExecuteCmd(new ProgressBarNotification(progress, info, partId));
+
+            string partState = "Empty";
+            if (partId.HasValue) {
+                if (partId.Value.Value.Equals(Guid.Empty)) {
+                    // Global Render progress bar
+                    partState = "Global";
+                } else {
+                    // Track-based progress bar
+                    partState = "Part " + partId.Value.Value;
+                }
+            }
+            Log.Information("[Progress Bar] {state} - {phonemeindex}/{total} phomemes - {progress}%", partState, phonemeIndex, total, (int)(progress));
+            DocManager.Inst.ExecuteCmd(new ProgressBarNotification(progress, info, partId, phonemeIndex));
 
             lock (this) {
                 // A newer update piled up while dispatching: this task's work is
@@ -446,6 +461,7 @@ namespace OpenUtau.Core.Render {
                 }
                 if (++request.completedPhrases == request.phrases.Length) {
                     planner.MarkPartComplete(request.part, request.phrases.Select(p => p.hash));
+                    partProgress.Clear();
                     if (coverageRanges != null &&
                         phrase.renderer.SupportsRealCurve &&
                         coverageRanges.TryGetValue(request.part, out var ranges) &&
@@ -455,6 +471,7 @@ namespace OpenUtau.Core.Render {
                     DocManager.Inst.ExecuteCmd(new PartRenderedNotification(request.part));
                 }
             }
+            
             globalProgress.Clear();
             
             // Immediate final refresh once the pass is done.
