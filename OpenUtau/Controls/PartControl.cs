@@ -11,13 +11,14 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using NWaves.Signals;
+using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 using ReactiveUI.Primitives;
 using Serilog;
 
 namespace OpenUtau.App.Controls {
-    class PartControl : Control, IDisposable, IProgress<int> {
+    class PartControl : Control, IDisposable, IProgress<int>, ICmdSubscriber {
         public static readonly DirectProperty<PartControl, double> TickWidthProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(TickWidth),
@@ -145,6 +146,8 @@ namespace OpenUtau.App.Controls {
         public PartControl(UPart part, PartsCanvas canvas) {
             this.part = part;
             partsCanvas = canvas;
+            DocManager.Inst.AddSubscriber(this);
+            
             bitmapData = new int[0];
             pointGeometry = new EllipseGeometry(new Rect(0, 0, 6, 6));
 
@@ -172,6 +175,7 @@ namespace OpenUtau.App.Controls {
                     }
                 }, CancellationToken.None, TaskContinuationOptions.None, scheduler);
             }
+            
             renderProgress = 1f;
         }
 
@@ -390,6 +394,16 @@ namespace OpenUtau.App.Controls {
             bitmap?.Dispose();
             unbinds.ForEach(u => u.Dispose());
             unbinds.Clear();
+        }
+
+
+        public void OnNext(UCommand cmd, bool isUndo) {
+            if (cmd is ProgressBarNotification progressBarNotification) {
+                if (part.Id.Equals(progressBarNotification.PartId)) {
+                    Log.Information("Part {partname} rendered at {progress}", part.DisplayName, progressBarNotification.Progress); //TODO: Remove this, or the Debug Window will be full of rendering statuses.
+                    Report((int)(progressBarNotification.Progress * 100));
+                }
+            }
         }
     }
 }
