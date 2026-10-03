@@ -63,7 +63,9 @@ namespace OpenUtau.Core.Render {
                 info = pendingInfo;
                 partId = pendingPartId;
             }
+            
             DocManager.Inst.ExecuteCmd(new ProgressBarNotification(progress, info, partId));
+
             lock (this) {
                 // A newer update piled up while dispatching: this task's work is
                 // done, hand the slot to a follow-up. The restart decision lives
@@ -90,6 +92,8 @@ namespace OpenUtau.Core.Render {
     }
 
     class RenderEngine {
+        public static PartId globalPartId = new PartId(Guid.Empty);
+        
         readonly UProject project;
         readonly int startTick;
         readonly int endTick;
@@ -358,6 +362,8 @@ namespace OpenUtau.Core.Render {
                 partProgressList.Add(tempProgress);
             }
             
+            var globalProgress = new Progress(tupleArray.Sum(t => t.phrase.phones.Length));
+            globalProgress.pendingPartId = globalPartId;
             // Only full-project passes (pre-render / export) maintain the real-curve coverage
             // invariant. Partial playback passes must not trim curves outside their tick window.
             bool maintainCoverage = startTick == 0 && endTick == -1;
@@ -370,7 +376,7 @@ namespace OpenUtau.Core.Render {
                 }
                 var phrase = tuple.phrase;
                 var request = tuple.request;
-                var progress = partProgressList.First(p => p.pendingPartId.Equals(request.part.Id));
+                var partProgress = partProgressList.First(p => p.pendingPartId.Equals(request.part.Id));
                 RealCurveUpdate[]? publishedUpdates = null;
                 var renderEvents = phrase.renderer.SupportsRealCurve
                     ? new RenderPhraseEvents(realCurves => {
@@ -379,7 +385,7 @@ namespace OpenUtau.Core.Render {
                     : null;
                 bool useXsy = phrase.xsy != null && phrase.xsy.Any(x => x > 0);
                 if (!useXsy) {
-                    var task = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
+                    var task = phrase.renderer.Render(phrase, globalProgress, partProgress, request.trackNo, cancellation, true, renderEvents);
                     task.Wait();
                     if (cancellation.IsCancellationRequested) {
                         break;
@@ -389,7 +395,7 @@ namespace OpenUtau.Core.Render {
                     string xsyKey = $"{phrase.hash:x16}|" +
                         string.Join(",", phrase.phones.Select(p => $"{p.oto2?.Set}:{p.oto2?.Alias}"));
                     if (!XsyBlendCache.TryGetValue(xsyKey, out var blended)) {
-                        var taskA = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
+                        var taskA = phrase.renderer.Render(phrase, partProgress, globalProgress, request.trackNo, cancellation, true, renderEvents);
                         taskA.Wait();
                         if (cancellation.IsCancellationRequested) {
                             break;
@@ -398,7 +404,7 @@ namespace OpenUtau.Core.Render {
                         // The secondary render runs on a separate phrase with oto2
                         // substituted, so the live phrase is never mutated.
                         var variant = RenderPhrase.BuildXsyVariant(phrase);
-                        var taskB = phrase.renderer.Render(variant, progress, request.trackNo, cancellation, true);
+                        var taskB = phrase.renderer.Render(variant, globalProgress, partProgress, request.trackNo, cancellation, true);
                         taskB.Wait();
                         if (cancellation.IsCancellationRequested) {
                             break;
@@ -449,10 +455,7 @@ namespace OpenUtau.Core.Render {
                     DocManager.Inst.ExecuteCmd(new PartRenderedNotification(request.part));
                 }
             }
-            foreach (var progress in partProgressList) {
-                progress.pendingPartId = null; // Clear pendingPartId to stop part background resetting.
-                progress.Clear();
-            }
+            globalProgress.Clear();
             
             // Immediate final refresh once the pass is done.
             DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
