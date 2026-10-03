@@ -13,6 +13,7 @@ using Avalonia.Media.Imaging;
 using NWaves.Signals;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 using ReactiveUI;
 using ReactiveUI.Primitives;
 using Serilog;
@@ -398,9 +399,11 @@ namespace OpenUtau.App.Controls {
 
 
         public void OnNext(UCommand cmd, bool isUndo) {
+            if (!Preferences.Default.RenderStatusInTrackBar) return;
+                
             if (cmd is ProgressBarNotification progressBarNotification) {
                 if (part.Id.Equals(progressBarNotification.PartId)) {
-                    Log.Information("Part {partname} rendered at {progress}", part.DisplayName, progressBarNotification.Progress); //TODO: Remove this, or the Debug Window will be full of rendering statuses.
+                    Log.Information("Part {partname} render at {progress}%", part.DisplayName, (int) (progressBarNotification.Progress));
                     Report((int)(progressBarNotification.Progress * 100));
                 }
             }
