@@ -1854,11 +1854,14 @@ namespace OpenUtau.App.Views {
                     .Where(n => (n.position < tick - part.position) && (n.End > tick - part.position))
                     .ToList();
                 
+                viewModel.TracksViewModel.DeselectParts();
+                if (viewModel.TracksViewModel.Parts.Contains(part)) viewModel.TracksViewModel.SelectPart(part);
+                
                 if (notesInTheWay.Count != 0) {
                     var res = await MessageBox.Show(
                         this,
                         ThemeManager.GetString("dialogs.splitpart.intheway"),
-                        string.Format(ThemeManager.GetString("dialogs.splitpart.caption"), part.DisplayName),
+                        ThemeManager.GetString("dialogs.splitpart.caption") + " - " + part.DisplayName,
                         MessageBox.MessageBoxButtons.YesNo);
                     if (res == MessageBox.MessageBoxResult.No) { 
                         partSplitTick.Add(null);
@@ -1879,7 +1882,11 @@ namespace OpenUtau.App.Views {
             DocManager.Inst.StartUndoGroup();
             try {
                 for (int i = 0; i < partSplitTick.Count; i++) {
-                    if (partSplitTick[i] == null) continue;
+                    var part = selectedParts[i];
+                    if (partSplitTick[i] == null) {
+                        if (viewModel.TracksViewModel.Parts.Contains(part)) viewModel.TracksViewModel.SelectPart(part);
+                        continue;
+                    }
                     SplitPart(selectedParts[i], (int)partSplitTick[i]!);
                 }
             } finally {
