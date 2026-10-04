@@ -1841,15 +1841,19 @@ namespace OpenUtau.App.Views {
         }
 
         async Task SplitParts() {
-            UPart[] selectedParts = viewModel.TracksViewModel.Parts.Where(viewModel.TracksViewModel.SelectedParts.Contains).ToArray();
-            selectedParts = selectedParts.OrderBy((part) => part.trackNo).ToArray();
+            UVoicePart[] selectedParts = viewModel.TracksViewModel.Parts
+                .Where(viewModel.TracksViewModel.SelectedParts.Contains)
+                .OfType<UVoicePart>()
+                .OrderBy((part) => part.trackNo)
+                .ToArray();
             List<int?> partSplitTick = [];
-            foreach (var part in selectedParts) {
+            foreach (UVoicePart part in selectedParts) {
                 int tick = DocManager.Inst.playPosTick;
-                if (part is not UVoicePart vp) { continue; }
-                var notesInTheWay = vp.notes.Where(n => (n.position < tick - vp.position) && (n.End > tick - vp.position));
+                List<UNote> notesInTheWay = part.notes
+                    .Where(n => (n.position < tick - part.position) && (n.End > tick - part.position))
+                    .ToList();
                 
-                if (notesInTheWay.Any()) {
+                if (notesInTheWay.Count != 0) {
                     var res = await MessageBox.Show(
                         this,
                         ThemeManager.GetString("dialogs.splitpart.intheway"),
@@ -1861,10 +1865,11 @@ namespace OpenUtau.App.Views {
                     }
 
                     do {
-                        tick = vp.position + notesInTheWay.Max(n => n.End);
-                        notesInTheWay = vp.notes.Where(n =>
-                            (n.position < tick - vp.position) && (n.End > tick - vp.position));
-                    } while (notesInTheWay.Any());
+                        tick = part.position + notesInTheWay.Max(n => n.End);
+                        notesInTheWay = part.notes
+                            .Where(n => (n.position < tick - part.position) && (n.End > tick - part.position))
+                            .ToList();
+                    } while (notesInTheWay.Count != 0);
                 }
                 partSplitTick.Add(tick);
             }
