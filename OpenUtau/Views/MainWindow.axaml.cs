@@ -1847,8 +1847,9 @@ namespace OpenUtau.App.Views {
                 .OrderBy((part) => part.trackNo)
                 .ToArray();
             List<int?> partSplitTick = [];
+            int currentPlayPos = DocManager.Inst.playPosTick;
             foreach (UVoicePart part in selectedParts) {
-                int tick = DocManager.Inst.playPosTick;
+                int tick = currentPlayPos;
                 List<UNote> notesInTheWay = part.notes
                     .Where(n => (n.position < tick - part.position) && (n.End > tick - part.position))
                     .ToList();
@@ -1857,7 +1858,7 @@ namespace OpenUtau.App.Views {
                     var res = await MessageBox.Show(
                         this,
                         ThemeManager.GetString("dialogs.splitpart.intheway"),
-                        string.Format(ThemeManager.GetString("dialogs.splitpart.caption"), part.name),
+                        string.Format(ThemeManager.GetString("dialogs.splitpart.caption"), part.DisplayName),
                         MessageBox.MessageBoxButtons.YesNo);
                     if (res == MessageBox.MessageBoxResult.No) { 
                         partSplitTick.Add(null);
@@ -1876,11 +1877,14 @@ namespace OpenUtau.App.Views {
             
             if (partSplitTick.All(tick => tick == null)) return;
             DocManager.Inst.StartUndoGroup();
-            for (int i = 0; i < partSplitTick.Count; i++) {
-                if (partSplitTick[i] == null) continue;
-                SplitPart(selectedParts[i], (int) partSplitTick[i]!);
+            try {
+                for (int i = 0; i < partSplitTick.Count; i++) {
+                    if (partSplitTick[i] == null) continue;
+                    SplitPart(selectedParts[i], (int)partSplitTick[i]!);
+                }
+            } finally {
+                DocManager.Inst.EndUndoGroup();
             }
-            DocManager.Inst.EndUndoGroup();
         }
         
         // Splits the parts at the tick, does nothing if any notes exist within the tick
