@@ -9,14 +9,19 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using DynamicData;
 using NWaves.Signals;
+using OpenUtau.Core;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 using ReactiveUI;
 using ReactiveUI.Primitives;
+using ReactiveUI.Primitives.Advanced;
 using Serilog;
 
 namespace OpenUtau.App.Controls {
-    class PartControl : Control, IDisposable, IProgress<int> {
+    class PartControl : Control, IDisposable, IProgress<int>, ICmdSubscriber {
         public static readonly DirectProperty<PartControl, double> TickWidthProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(TickWidth),
@@ -140,6 +145,8 @@ namespace OpenUtau.App.Controls {
         private WriteableBitmap? bitmap;
         private int[] bitmapData;
 
+        private List<RenderPhraseRangeRect> phraseRangeRects = [];
+        
         public PartControl(UPart part, PartsCanvas canvas) {
             this.part = part;
             partsCanvas = canvas;
@@ -208,83 +215,132 @@ namespace OpenUtau.App.Controls {
         }
 
         public override void Render(DrawingContext context) {
-            var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
-            // Background
-            context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
-
-            // Text
-            var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
-            using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
-                context.DrawRectangle(backgroundBrush, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
-                textLayout.Draw(context, new Point());
-            }
-
-            if (part == null) {
-                return;
-            }
             if (part is UVoicePart voicePart) {
-                // Notes
-                if (voicePart.notes.Count > 0) {
-                    int maxTone = voicePart.notes.Max(note => note.tone);
-                    int minTone = voicePart.notes.Min(note => note.tone);
-                    if (maxTone - minTone < 52) {
-                        int additional = (52 - (maxTone - minTone)) / 2;
-                        minTone -= additional;
-                        maxTone += additional;
-                    }
-                    using var pushedState = context.PushTransform(Matrix.CreateScale(1, trackHeight / (maxTone - minTone)));
-                    foreach (var note in voicePart.notes) {
-                        var start = new Point((int)(note.position * tickWidth), maxTone - note.tone);
-                        var end = new Point((int)(note.End * tickWidth), maxTone - note.tone);
-                        context.DrawLine(notePen, start, end);
+                if (Preferences.Default.RenderStatusInTrackBar) {
+                    // Recalculate phrase rectangles
+                    if (phraseRangeRects.Count == 0 ||
+                        phraseRangeRects.Count(rect => !rect.IsDummy) != voicePart.renderPhrases.Count) {
+                        for (var index = 0; index < voicePart.renderPhrases.Count; index++) {
+                            RenderPhrase phrase = voicePart.renderPhrases[index];
+                        
+                            // Fill pre-phrase rectangle
+                            if (index == 0 && phrase.position > 0) {
+                                phraseRangeRects.Add(new RenderPhraseRangeRect(0, phrase.position + 1, true, index));
+                            }
+
+                            phraseRangeRects.Add(new RenderPhraseRangeRect(phrase.position, phrase.end, false));
+                        }
                     }
                 }
-                // Highlight
-                if (voicePart == partsCanvas.PianoRollOpenPart && pianoRollViewViewportTicks > 0) {
-                    const double inset = 1;
-                    double innerWidth = Math.Max(0, Width - 2 * inset);
-                    double innerHeight = Math.Max(0, Height - 2 * inset);
 
-                    double vpLeft = Math.Max(0, pianoRollViewTickOffset * tickWidth);
-                    double vpRight = Math.Min(innerWidth, (pianoRollViewTickOffset + pianoRollViewViewportTicks) * tickWidth);
+                // Background
+                DrawBackground(context);
 
-                    if (vpRight > vpLeft + 1) {
-                        var vpRect = new Rect(inset + vpLeft, inset, vpRight - vpLeft, innerHeight);
-                        var vpFill = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
-                        var vpPen = new Pen(Brushes.White, 2);
-                        context.DrawRectangle(vpFill, vpPen, new RoundedRect(vpRect, new CornerRadius(3)));
-                    }
+                // Text
+                var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
+                using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
+                    context.DrawRectangle(Brushes.Transparent, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
+                    textLayout.Draw(context, new Point());
                 }
+                
+                RenderForVoicePart(context, voicePart);
             } else if (part is UWavePart wavePart) {
-                // Waveform
-                try {
-                    DrawWaveform(wavePart, GetBitmap(ViewWidth));
-                    if (bitmap != null) {
-                        var srcRect = Bounds.WithY(0);
-                        var dstRect = Bounds.WithX(1).WithY(0);
-                        context.DrawImage(bitmap, srcRect, dstRect);
-                    }
-                } catch (Exception e) {
-                    Log.Error(e, "failed to draw bitmap");
+                // Background
+                // We don't recalculate phrases in a WavePart, DrawBackground checks for this.
+                DrawBackground(context);
+
+                // Text
+                var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
+                using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
+                    context.DrawRectangle(Brushes.Transparent, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
+                    textLayout.Draw(context, new Point());
                 }
-                // Fade
-                var brush = Brushes.White;
-                var pen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
-                using (var state = context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
-                    context.DrawGeometry(brush, pen, pointGeometry);
+                
+                RenderForWavePart(context, wavePart);
+            }
+        }
+
+        private void RenderForVoicePart(DrawingContext context, UVoicePart voicePart) {
+            // Notes
+            if (voicePart.notes.Count > 0) {
+                int maxTone = voicePart.notes.Max(note => note.tone);
+                int minTone = voicePart.notes.Min(note => note.tone);
+                if (maxTone - minTone < 52) {
+                    int additional = (52 - (maxTone - minTone)) / 2;
+                    minTone -= additional;
+                    maxTone += additional;
                 }
-                if (wavePart.fadein > 0) {
-                    context.DrawLine(fadePen, new Point(2, Height - 2), new Point(FadeIn + 1, 2));
+                using var pushedState = context.PushTransform(Matrix.CreateScale(1, trackHeight / (maxTone - minTone)));
+                foreach (var note in voicePart.notes) {
+                    var start = new Point((int)(note.position * tickWidth), maxTone - note.tone);
+                    var end = new Point((int)(note.End * tickWidth), maxTone - note.tone);
+                    context.DrawLine(notePen, start, end);
                 }
-                using (var state = context.PushTransform(Matrix.CreateTranslation(FadeOut - 6, 0))) {
-                    context.DrawGeometry(brush, pen, pointGeometry);
-                }
-                if (wavePart.fadeout > 0) {
-                    context.DrawLine(fadePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
+            }
+            // Highlight
+            if (voicePart == partsCanvas.PianoRollOpenPart && pianoRollViewViewportTicks > 0) {
+                const double inset = 1;
+                double innerWidth = Math.Max(0, Width - 2 * inset);
+                double innerHeight = Math.Max(0, Height - 2 * inset);
+
+                double vpLeft = Math.Max(0, pianoRollViewTickOffset * tickWidth);
+                double vpRight = Math.Min(innerWidth, (pianoRollViewTickOffset + pianoRollViewViewportTicks) * tickWidth);
+
+                if (vpRight > vpLeft + 1) {
+                    var vpRect = new Rect(inset + vpLeft, inset, vpRight - vpLeft, innerHeight);
+                    var vpFill = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
+                    var vpPen = new Pen(Brushes.White, 2);
+                    context.DrawRectangle(vpFill, vpPen, new RoundedRect(vpRect, new CornerRadius(3)));
                 }
             }
         }
 
+        private void RenderForWavePart(DrawingContext context, UWavePart wavePart) {
+            // Waveform
+            try {
+                DrawWaveform(wavePart, GetBitmap(ViewWidth));
+                if (bitmap != null) {
+                    var srcRect = Bounds.WithY(0);
+                    var dstRect = Bounds.WithX(1).WithY(0);
+                    context.DrawImage(bitmap, srcRect, dstRect);
+                }
+            } catch (Exception e) {
+                Log.Error(e, "failed to draw bitmap");
+            }
+            // Fade
+            var brush = Brushes.White;
+            var pen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
+            using (var state = context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
+                context.DrawGeometry(brush, pen, pointGeometry);
+            }
+            if (wavePart.fadein > 0) {
+                context.DrawLine(fadePen, new Point(2, Height - 2), new Point(FadeIn + 1, 2));
+            }
+            using (var state = context.PushTransform(Matrix.CreateTranslation(FadeOut - 6, 0))) {
+                context.DrawGeometry(brush, pen, pointGeometry);
+            }
+            if (wavePart.fadeout > 0) {
+                context.DrawLine(fadePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
+            }
+        }
+
+        private void DrawBackground(DrawingContext context) {
+            var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
+            var renderingBrush = Selected ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi;
+            if (phraseRangeRects.Count == 0) {
+                context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+                return;
+            }
+            
+            foreach (var phrase in phraseRangeRects) {
+                if (phrase.Rendered) {
+                    context.DrawRectangle(backgroundBrush, null, phrase.GetRectangle(tickWidth, Height), 0, 0);
+                } else {
+                    context.DrawRectangle(renderingBrush, null, phrase.GetRectangle(tickWidth, Height), 0, 0);
+                }
+            }
+        }
+        
         private WriteableBitmap GetBitmap(double width) {
             int w = 128 * (int)(width / 128 + 1);
             if (bitmap == null || bitmap.Size.Width < w) {
@@ -373,13 +429,52 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        public void Report(int value) {
-        }
+        public void Report(int value) { }
 
         public void Dispose() {
             bitmap?.Dispose();
             unbinds.ForEach(u => u.Dispose());
             unbinds.Clear();
+        }
+
+        public void OnNext(UCommand cmd, bool isUndo) {
+            if (cmd is PhraseRenderStateNotification state) {
+                if (!state.Part.Equals(part)) return;
+
+                Log.Information(state.ToLogString());
+                
+                foreach (var phraseRangeRect in phraseRangeRects) {
+                    if (phraseRangeRect.StartTick.Equals(state.StartTick) && phraseRangeRect.EndTick.Equals(state.EndTick)) {
+                        phraseRangeRect.Rendered = state.Rendered;
+                        InvalidateVisual();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    class RenderPhraseRangeRect {
+        public readonly int StartTick;
+        public readonly int EndTick;
+        public bool Rendered = false;
+        public bool IsDummy = false;
+        public readonly int DataDependent; // This is used when IsDummy is true / set to -1 if false;
+
+        public RenderPhraseRangeRect(int startTick, int endTick, bool isDummy, int dataDependent = -1) {
+            this.StartTick = startTick;
+            this.EndTick = endTick;
+            this.IsDummy = isDummy;
+            if (isDummy) {
+                this.DataDependent = dataDependent;
+            } else {
+                this.DataDependent = -1;
+            }
+        }
+
+        public Rect GetRectangle(double tickWidth, double height) {
+            return new Rect(StartTick * tickWidth, 0, (EndTick * tickWidth) - (StartTick * tickWidth), height - 1);
         }
     }
 }

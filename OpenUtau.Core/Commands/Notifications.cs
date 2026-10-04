@@ -192,6 +192,26 @@ namespace OpenUtau.Core {
         public override string ToString() => $"Set progress {Progress} {Info}";
     }
 
+    public class PhraseRenderStateNotification : UNotification {
+        public UVoicePart Part;
+        public int StartTick;
+        public int EndTick;
+        public bool Rendered;
+
+        public PhraseRenderStateNotification(UVoicePart part, int startTick, int endTick, bool rendered) {
+            Part = part;
+            StartTick = startTick;
+            EndTick = endTick;
+            Rendered = rendered;
+        }
+        
+        public string ToLogString() => Rendered
+            ? $"{Part.DisplayName} | {StartTick}-{EndTick} - Rendered"
+            : $"{Part.DisplayName} | {StartTick}-{EndTick} - Not Rendered";
+        
+        public override string ToString() => "Render state Notification";
+    }
+
     public class VolumeChangeNotification : UNotification {
         public double Volume;
         public int TrackNo;
