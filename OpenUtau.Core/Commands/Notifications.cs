@@ -209,7 +209,7 @@ namespace OpenUtau.Core {
             ? $"{Part.DisplayName} | {StartTick}-{EndTick} - Rendered"
             : $"{Part.DisplayName} | {StartTick}-{EndTick} - Not Rendered";
         
-        public override string ToString() => "Render state Notification";
+        public override string ToString() => ToLogString();
     }
 
     public class VolumeChangeNotification : UNotification {

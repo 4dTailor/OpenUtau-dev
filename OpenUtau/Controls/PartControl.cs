@@ -19,6 +19,7 @@ using ReactiveUI;
 using ReactiveUI.Primitives;
 using ReactiveUI.Primitives.Advanced;
 using Serilog;
+using Serilog.Core;
 
 namespace OpenUtau.App.Controls {
     class PartControl : Control, IDisposable, IProgress<int>, ICmdSubscriber {
@@ -218,20 +219,23 @@ namespace OpenUtau.App.Controls {
             if (part is UVoicePart voicePart) {
                 if (Preferences.Default.RenderStatusInTrackBar) {
                     // Recalculate phrase rectangles
-                    if (phraseRangeRects.Count == 0 ||
-                        phraseRangeRects.Count(rect => !rect.IsDummy) != voicePart.renderPhrases.Count) {
+                    if (phraseRangeRects.Count == 0 || phraseRangeRects.Count != voicePart.renderPhrases.Count) {
                         for (var index = 0; index < voicePart.renderPhrases.Count; index++) {
                             RenderPhrase phrase = voicePart.renderPhrases[index];
-                        
-                            // Fill pre-phrase rectangle
-                            if (index == 0 && phrase.position > 0) {
-                                phraseRangeRects.Add(new RenderPhraseRangeRect(0, phrase.position + 1, true, index));
-                            }
 
-                            phraseRangeRects.Add(new RenderPhraseRangeRect(phrase.position, phrase.end, false));
+                            if (index > 0) {
+                                RenderPhrase prePhrase = voicePart.renderPhrases[index - 1];
+                                phraseRangeRects.Add(new RenderPhraseRangeRect(phrase.position, phrase.end, phrase.position - prePhrase.end, 0));
+                            } else if (index == voicePart.renderPhrases.Count - 1) {
+                                RenderPhrase prePhrase = voicePart.renderPhrases[index - 1];
+                                phraseRangeRects.Add(new RenderPhraseRangeRect(phrase.position, phrase.end, phrase.position - prePhrase.end, part.End - phrase.end));
+                            } else {
+                                phraseRangeRects.Add(new RenderPhraseRangeRect(phrase.position, phrase.end, phrase.position - part.position, 0));
+                            }
                         }
                     }
                 }
+                
 
                 // Background
                 DrawBackground(context);
@@ -239,23 +243,26 @@ namespace OpenUtau.App.Controls {
                 // Text
                 var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
                 using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
-                    context.DrawRectangle(Brushes.Transparent, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
+                    context.DrawRectangle(Brushes.Transparent, null,
+                        new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
                     textLayout.Draw(context, new Point());
                 }
-                
-                RenderForVoicePart(context, voicePart);
+
+                RenderForVoicePart(context, voicePart); 
             } else if (part is UWavePart wavePart) {
                 // Background
                 // We don't recalculate phrases in a WavePart, DrawBackground checks for this.
+                phraseRangeRects.Clear();
                 DrawBackground(context);
 
                 // Text
                 var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
                 using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
-                    context.DrawRectangle(Brushes.Transparent, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
+                    context.DrawRectangle(Brushes.Transparent, null,
+                        new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
                     textLayout.Draw(context, new Point());
                 }
-                
+
                 RenderForWavePart(context, wavePart);
             }
         }
@@ -332,11 +339,14 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             
-            foreach (var phrase in phraseRangeRects) {
+            context.DrawRectangle(renderingBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+            for (var index = 0; index < phraseRangeRects.Count; index++) {
+                var phrase = phraseRangeRects[index];
+                
                 if (phrase.Rendered) {
-                    context.DrawRectangle(backgroundBrush, null, phrase.GetRectangle(tickWidth, Height), 0, 0);
+                    context.DrawRectangle(backgroundBrush, null, phrase.GetRectangle(tickWidth, Height), 4, 4);
                 } else {
-                    context.DrawRectangle(renderingBrush, null, phrase.GetRectangle(tickWidth, Height), 0, 0);
+                    context.DrawRectangle(renderingBrush, null, phrase.GetRectangle(tickWidth, Height), 4, 4);
                 }
             }
         }
@@ -440,8 +450,6 @@ namespace OpenUtau.App.Controls {
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is PhraseRenderStateNotification state) {
                 if (!state.Part.Equals(part)) return;
-
-                Log.Information(state.ToLogString());
                 
                 foreach (var phraseRangeRect in phraseRangeRects) {
                     if (phraseRangeRect.StartTick.Equals(state.StartTick) && phraseRangeRect.EndTick.Equals(state.EndTick)) {
@@ -455,26 +463,18 @@ namespace OpenUtau.App.Controls {
     }
     
     
-    class RenderPhraseRangeRect {
-        public readonly int StartTick;
-        public readonly int EndTick;
-        public bool Rendered = false;
-        public bool IsDummy = false;
-        public readonly int DataDependent; // This is used when IsDummy is true / set to -1 if false;
-
-        public RenderPhraseRangeRect(int startTick, int endTick, bool isDummy, int dataDependent = -1) {
-            this.StartTick = startTick;
-            this.EndTick = endTick;
-            this.IsDummy = isDummy;
-            if (isDummy) {
-                this.DataDependent = dataDependent;
-            } else {
-                this.DataDependent = -1;
-            }
-        }
+    class RenderPhraseRangeRect(int startTick, int endTick, int prePhraseTick, int postPhraseTick) {
+        public readonly int StartTick = startTick;
+        public readonly int EndTick = endTick;
+        public bool Rendered;
 
         public Rect GetRectangle(double tickWidth, double height) {
-            return new Rect(StartTick * tickWidth, 0, (EndTick * tickWidth) - (StartTick * tickWidth), height - 1);
+            return new Rect(
+                (StartTick - prePhraseTick) * tickWidth + 1,
+                0, 
+                ((EndTick + postPhraseTick) - (StartTick - prePhraseTick)) * tickWidth - 1,
+                height
+                );
         }
     }
 }
