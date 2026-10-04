@@ -75,15 +75,14 @@ namespace OpenUtau.Core.Enunu {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
                     if (cancellation.IsCancellationRequested) {
                         return new RenderResult();
                     }
                     string progressInfo = $"Track {trackNo + 1}: {this} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
-                    globalProgress.Complete(0, progressInfo);
-                    partProgress.Complete(0, progressInfo);
+                    progress.Complete(0, progressInfo);
                     ulong hash = HashPhraseGroups(phrase);
                     var tmpPath = Path.Join(PathManager.Inst.CachePath, $"enu-{hash:x16}");
                     var ustPath = tmpPath + ".tmp";
@@ -179,8 +178,7 @@ namespace OpenUtau.Core.Enunu {
                             Wave.WriteMono16Wav(wavPath, result.samples);
                         }
                     }
-                    globalProgress.Complete(phrase.phones.Length, progressInfo);
-                    partProgress.Complete(phrase.phones.Length, progressInfo);
+                    progress.Complete(phrase.phones.Length, progressInfo);
                     if (File.Exists(wavPath)) {
                         using (var waveStream = Wave.OpenFile(wavPath)) {
                             result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));

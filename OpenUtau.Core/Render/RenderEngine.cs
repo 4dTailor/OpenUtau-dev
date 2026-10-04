@@ -1,16 +1,13 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenUtau.Core.SignalChain;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using OpenUtau.Classic;
-using OpenUtau.Core.Pipeline;
 using Serilog;
-using Serilog.Core;
 
 namespace OpenUtau.Core.Render {
     public class Progress {
@@ -22,7 +19,6 @@ namespace OpenUtau.Core.Render {
         Task pending = null;
         double pendingProgress;
         string pendingInfo = string.Empty;
-        public PartId? pendingPartId = null;
 
         internal bool DispatchInFlight => pending != null && !pending.IsCompleted;
 
@@ -59,28 +55,11 @@ namespace OpenUtau.Core.Render {
         private void Dispatch() {
             double progress;
             string info;
-            PartId? partId;
-            int phonemeIndex;
             lock (this) {
                 progress = pendingProgress;
                 info = pendingInfo;
-                partId = pendingPartId;
-                phonemeIndex = completed;
             }
-
-            string partState = "Empty";
-            if (partId.HasValue) {
-                if (partId.Value.Value.Equals(Guid.Empty)) {
-                    // Global Render progress bar
-                    partState = "Global";
-                } else {
-                    // Track-based progress bar
-                    partState = "Part " + partId.Value.Value;
-                }
-            }
-            Log.Information("[Progress Bar] {state} - {phonemeindex}/{total} phomemes - {progress}%", partState, phonemeIndex, total, (int)(progress));
-            DocManager.Inst.ExecuteCmd(new ProgressBarNotification(progress, info, partId, phonemeIndex));
-
+            DocManager.Inst.ExecuteCmd(new ProgressBarNotification(progress, info));
             lock (this) {
                 // A newer update piled up while dispatching: this task's work is
                 // done, hand the slot to a follow-up. The restart decision lives
@@ -107,8 +86,6 @@ namespace OpenUtau.Core.Render {
     }
 
     class RenderEngine {
-        public static PartId globalPartId = new PartId(Guid.Empty);
-        
         readonly UProject project;
         readonly int startTick;
         readonly int endTick;
@@ -366,19 +343,7 @@ namespace OpenUtau.Core.Render {
             } else if (focusPart != null || focusTick >= 0) {
                 tupleArray = OrderForPreRender(tupleArray);
             }
-            
-            // Group requests by parts;
-            var groupedRequests = tupleArray.ToArray().GroupBy(tuple => tuple.request.part.Id);
-            var partProgressList = new List<Progress>();
-            
-            foreach (var group in groupedRequests) {
-                var tempProgress = new Progress(group.ToArray().Sum(t => t.phrase.phones.Length));
-                tempProgress.pendingPartId = group.Key;
-                partProgressList.Add(tempProgress);
-            }
-            
-            var globalProgress = new Progress(tupleArray.Sum(t => t.phrase.phones.Length));
-            globalProgress.pendingPartId = globalPartId;
+            var progress = new Progress(tupleArray.Sum(t => t.phrase.phones.Length));
             // Only full-project passes (pre-render / export) maintain the real-curve coverage
             // invariant. Partial playback passes must not trim curves outside their tick window.
             bool maintainCoverage = startTick == 0 && endTick == -1;
@@ -391,7 +356,6 @@ namespace OpenUtau.Core.Render {
                 }
                 var phrase = tuple.phrase;
                 var request = tuple.request;
-                var partProgress = partProgressList.First(p => p.pendingPartId.Equals(request.part.Id));
                 RealCurveUpdate[]? publishedUpdates = null;
                 var renderEvents = phrase.renderer.SupportsRealCurve
                     ? new RenderPhraseEvents(realCurves => {
@@ -400,7 +364,7 @@ namespace OpenUtau.Core.Render {
                     : null;
                 bool useXsy = phrase.xsy != null && phrase.xsy.Any(x => x > 0);
                 if (!useXsy) {
-                    var task = phrase.renderer.Render(phrase, globalProgress, partProgress, request.trackNo, cancellation, true, renderEvents);
+                    var task = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
                     task.Wait();
                     if (cancellation.IsCancellationRequested) {
                         break;
@@ -410,7 +374,7 @@ namespace OpenUtau.Core.Render {
                     string xsyKey = $"{phrase.hash:x16}|" +
                         string.Join(",", phrase.phones.Select(p => $"{p.oto2?.Set}:{p.oto2?.Alias}"));
                     if (!XsyBlendCache.TryGetValue(xsyKey, out var blended)) {
-                        var taskA = phrase.renderer.Render(phrase, partProgress, globalProgress, request.trackNo, cancellation, true, renderEvents);
+                        var taskA = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
                         taskA.Wait();
                         if (cancellation.IsCancellationRequested) {
                             break;
@@ -419,7 +383,7 @@ namespace OpenUtau.Core.Render {
                         // The secondary render runs on a separate phrase with oto2
                         // substituted, so the live phrase is never mutated.
                         var variant = RenderPhrase.BuildXsyVariant(phrase);
-                        var taskB = phrase.renderer.Render(variant, globalProgress, partProgress, request.trackNo, cancellation, true);
+                        var taskB = phrase.renderer.Render(variant, progress, request.trackNo, cancellation, true);
                         taskB.Wait();
                         if (cancellation.IsCancellationRequested) {
                             break;
@@ -461,7 +425,6 @@ namespace OpenUtau.Core.Render {
                 }
                 if (++request.completedPhrases == request.phrases.Length) {
                     planner.MarkPartComplete(request.part, request.phrases.Select(p => p.hash));
-                    partProgress.Clear();
                     if (coverageRanges != null &&
                         phrase.renderer.SupportsRealCurve &&
                         coverageRanges.TryGetValue(request.part, out var ranges) &&
@@ -471,9 +434,7 @@ namespace OpenUtau.Core.Render {
                     DocManager.Inst.ExecuteCmd(new PartRenderedNotification(request.part));
                 }
             }
-            
-            globalProgress.Clear();
-            
+            progress.Clear();
             // Immediate final refresh once the pass is done.
             DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
         }

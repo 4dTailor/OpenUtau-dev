@@ -7,7 +7,6 @@ using Avalonia.Threading;
 using DynamicData.Binding;
 using OpenUtau.App.Views;
 using OpenUtau.Core;
-using OpenUtau.Core.Pipeline;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
@@ -462,12 +461,10 @@ namespace OpenUtau.App.ViewModels {
 
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is ProgressBarNotification progressBarNotification) {
-                if (progressBarNotification.PartId.Equals(new PartId(Guid.Empty))) {
-                    Dispatcher.UIThread.InvokeAsync(() => {
-                        Progress = progressBarNotification.Progress;
-                        ProgressText = progressBarNotification.Info;
-                    }, DispatcherPriority.Background);
-                }
+                Dispatcher.UIThread.InvokeAsync(() => {
+                    Progress = progressBarNotification.Progress;
+                    ProgressText = progressBarNotification.Info;
+                }, DispatcherPriority.Background);
             } else if (cmd is LoadProjectNotification loadProject) {
                 Preferences.AddRecentFileIfEnabled(loadProject.project.FilePath);
             } else if (cmd is SaveProjectNotification saveProject) {
