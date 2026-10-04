@@ -1861,7 +1861,7 @@ namespace OpenUtau.App.Views {
                     var res = await MessageBox.Show(
                         this,
                         ThemeManager.GetString("dialogs.splitpart.intheway"),
-                        ThemeManager.GetString("dialogs.splitpart.caption") + " - " + part.DisplayName,
+                        ThemeManager.GetString("dialogs.splitpart.caption") + " | " + part.DisplayName,
                         MessageBox.MessageBoxButtons.YesNo);
                     if (res == MessageBox.MessageBoxResult.No) { 
                         partSplitTick.Add(null);
