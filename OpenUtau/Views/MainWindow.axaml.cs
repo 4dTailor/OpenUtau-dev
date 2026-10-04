@@ -1877,6 +1877,7 @@ namespace OpenUtau.App.Views {
                 }
                 partSplitTick.Add(tick);
             }
+            viewModel.TracksViewModel.DeselectParts();
             
             if (partSplitTick.All(tick => tick == null)) return;
             DocManager.Inst.StartUndoGroup();
