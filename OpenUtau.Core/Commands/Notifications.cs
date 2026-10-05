@@ -206,10 +206,10 @@ namespace OpenUtau.Core {
         }
         
         public string ToLogString() => Rendered
-            ? $"{Part.DisplayName} | {StartTick}-{EndTick} - Rendered"
-            : $"{Part.DisplayName} | {StartTick}-{EndTick} - Not Rendered";
+            ? $"{Part.DisplayName} | Rendered {StartTick}-{EndTick}"
+            : $"{Part.DisplayName} | Unrendered {StartTick}-{EndTick}";
         
-        public override string ToString() => ToLogString();
+        public override string ToString() => "Phrase Render State";
     }
 
     public class VolumeChangeNotification : UNotification {

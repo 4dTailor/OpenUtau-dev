@@ -1,5 +1,7 @@
 ﻿﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
+using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
@@ -10,6 +12,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using DynamicData;
+using MonoMac.AppKit;
 using NWaves.Signals;
 using OpenUtau.Core;
 using OpenUtau.Core.Render;
@@ -147,6 +150,7 @@ namespace OpenUtau.App.Controls {
         private int[] bitmapData;
 
         private List<RenderPhraseRangeRect> phraseRangeRects = [];
+        private double tolerance = 0d;
         
         public PartControl(UPart part, PartsCanvas canvas) {
             this.part = part;
@@ -217,28 +221,22 @@ namespace OpenUtau.App.Controls {
 
         public override void Render(DrawingContext context) {
             if (part is UVoicePart voicePart) {
+                // Background
                 if (Preferences.Default.RenderStatusInTrackBar) {
                     // Recalculate phrase rectangles
                     if (phraseRangeRects.Count == 0 || phraseRangeRects.Count != voicePart.renderPhrases.Count) {
                         for (var index = 0; index < voicePart.renderPhrases.Count; index++) {
                             RenderPhrase phrase = voicePart.renderPhrases[index];
-
-                            if (index > 0) {
-                                RenderPhrase prePhrase = voicePart.renderPhrases[index - 1];
-                                phraseRangeRects.Add(new RenderPhraseRangeRect(phrase.position, phrase.end, phrase.position - prePhrase.end, 0));
-                            } else if (index == voicePart.renderPhrases.Count - 1) {
-                                RenderPhrase prePhrase = voicePart.renderPhrases[index - 1];
-                                phraseRangeRects.Add(new RenderPhraseRangeRect(phrase.position, phrase.end, phrase.position - prePhrase.end, part.End - phrase.end));
-                            } else {
-                                phraseRangeRects.Add(new RenderPhraseRangeRect(phrase.position, phrase.end, phrase.position - part.position, 0));
-                            }
+                            RenderPhraseRangeRect rect = new RenderPhraseRangeRect(phrase.position, phrase.end);
+                            
+                            phraseRangeRects.Add(rect);
                         }
                     }
+                    DrawBackground(context, true);
+                } else {
+                    phraseRangeRects.Clear();
+                    DrawBackground(context, false);
                 }
-                
-
-                // Background
-                DrawBackground(context);
 
                 // Text
                 var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
@@ -253,7 +251,7 @@ namespace OpenUtau.App.Controls {
                 // Background
                 // We don't recalculate phrases in a WavePart, DrawBackground checks for this.
                 phraseRangeRects.Clear();
-                DrawBackground(context);
+                DrawBackground(context, false);
 
                 // Text
                 var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
@@ -331,24 +329,76 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        private void DrawBackground(DrawingContext context) {
+        private void DrawBackground(DrawingContext context, bool isRendering) {
             var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
             var renderingBrush = Selected ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi;
             if (phraseRangeRects.Count == 0) {
-                context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+                context.DrawRectangle(isRendering ? renderingBrush : backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
                 return;
             }
             
-            context.DrawRectangle(renderingBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
-            for (var index = 0; index < phraseRangeRects.Count; index++) {
-                var phrase = phraseRangeRects[index];
-                
-                if (phrase.Rendered) {
-                    context.DrawRectangle(backgroundBrush, null, phrase.GetRectangle(tickWidth, Height), 4, 4);
+            // Render first phrase - part position/phrase end
+            var renderPhraseRange = phraseRangeRects[0];
+            context.DrawRectangle(renderPhraseRange.Rendered ?
+                backgroundBrush : 
+                renderingBrush, null,
+                new RoundedRect(renderPhraseRange.GetRectangle(new Point(1, 0), tickWidth, Height - 1,
+                        (renderPhraseRange.StartTick - part.position) + tickWidth,
+                        0),
+                    new Vector(4, 4), new Vector(0, 0), new Vector(0, 0), new Vector(4, 4))
+                );
+            
+            // Render other phrases - past phrase end/phrase end
+            for (var index = 1; index < phraseRangeRects.Count - 1; index++) {
+                RenderPhraseRangeRect prevRangeRect = phraseRangeRects[index - 1];
+                RenderPhraseRangeRect currRangeRect = phraseRangeRects[index];
+
+                var prevRect = prevRangeRect.GetRectangle()!.Value;  //TODO determine if null checking required
+                var currRect = currRangeRect.GetRectangle(new Point(0, 0), tickWidth,
+                    Height - 1,
+                    (currRangeRect.StartTick - prevRangeRect.EndTick) * tickWidth,
+                    0);
+
+                // Check for floating point precision
+                Rect renderRect;
+                if (Math.Abs(prevRect.Right - currRect.Left) > tolerance) {
+                    renderRect = new Rect(prevRect.TopLeft, currRect.BottomRight);
                 } else {
-                    context.DrawRectangle(renderingBrush, null, phrase.GetRectangle(tickWidth, Height), 4, 4);
+                    renderRect = currRect;
                 }
+                
+                context.DrawRectangle(phraseRangeRects[index].Rendered ? backgroundBrush : renderingBrush,
+                    null,
+                        new RoundedRect(renderRect, new Vector(0, 0)));
             }
+            
+            // Render last phrase - past phrase end / part end
+            RenderPhraseRangeRect prevLastRangeRect = phraseRangeRects[^2];
+            RenderPhraseRangeRect lastRangeRect = phraseRangeRects[^1];
+
+            var prevLastRect = prevLastRangeRect.GetRectangle()!.Value; //TODO determine if null checking required
+            var lastRect = lastRangeRect.GetRectangle(new Point(0, 0), tickWidth,
+                Height - 1,
+                (lastRangeRect.StartTick - prevLastRangeRect.EndTick) * tickWidth,
+                (part.End - lastRangeRect.EndTick) * tickWidth);
+
+            // Check for floating point precision
+            Rect tempRenderRect;
+            if (Math.Abs(prevLastRect.Right - lastRect.Left) > tolerance) {
+                tempRenderRect = new Rect(prevLastRect.TopLeft, lastRect.BottomRight);
+            } else {
+                tempRenderRect = lastRect;
+            }
+            
+            context.DrawRectangle(renderPhraseRange.Rendered ?
+                backgroundBrush : 
+                renderingBrush, null, 
+                new RoundedRect(tempRenderRect,
+                    new Vector(0, 0),
+                    new Vector(4, 4),
+                    new Vector(4, 4),
+                    new Vector(0, 0)
+                    ));
         }
         
         private WriteableBitmap GetBitmap(double width) {
@@ -463,18 +513,29 @@ namespace OpenUtau.App.Controls {
     }
     
     
-    class RenderPhraseRangeRect(int startTick, int endTick, int prePhraseTick, int postPhraseTick) {
-        public readonly int StartTick = startTick;
-        public readonly int EndTick = endTick;
+    class RenderPhraseRangeRect {
+        public readonly int StartTick;
+        public readonly int EndTick;
         public bool Rendered;
 
-        public Rect GetRectangle(double tickWidth, double height) {
-            return new Rect(
-                (StartTick - prePhraseTick) * tickWidth + 1,
-                0, 
-                ((EndTick + postPhraseTick) - (StartTick - prePhraseTick)) * tickWidth - 1,
-                height
-                );
+        private Rect? rect;
+
+        public RenderPhraseRangeRect(int startTick, int endTick, bool rendered = false) {
+            StartTick = startTick;
+            EndTick = endTick;
+            Rendered = rendered;
+        }
+
+        // LeadPos/TailPos is relative
+        public Rect GetRectangle(Point offset, double tickWidth, double height, double leadPos, double tailPos) {
+            int startX = (int)((StartTick * tickWidth) + offset.X - leadPos);
+            int endX = (int)((EndTick * tickWidth) + offset.X + tailPos);
+            rect = new Rect(startX, offset.Y, endX - startX, height);
+            return rect.Value;
+        }
+
+        public Rect? GetRectangle() {
+            return rect;
         }
     }
 }
