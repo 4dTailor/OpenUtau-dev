@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
@@ -31,51 +31,61 @@ namespace OpenUtau.App.Controls {
                 nameof(TickWidth),
                 o => o.TickWidth,
                 (o, v) => o.TickWidth = v);
+
         public static readonly DirectProperty<PartControl, double> TrackHeightProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(TrackHeight),
                 o => o.TrackHeight,
                 (o, v) => o.TrackHeight = v);
+
         public static readonly DirectProperty<PartControl, double> ViewWidthProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(ViewWidth),
                 o => o.ViewWidth,
                 (o, v) => o.ViewWidth = v);
+
         public static readonly DirectProperty<PartControl, double> TickOffsetProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(TickOffset),
                 o => o.TickOffset,
                 (o, v) => o.TickOffset = v);
+
         public static readonly DirectProperty<PartControl, Point> OffsetProperty =
             AvaloniaProperty.RegisterDirect<PartControl, Point>(
                 nameof(Offset),
                 o => o.Offset,
                 (o, v) => o.Offset = v);
+
         public static readonly DirectProperty<PartControl, string> TextProperty =
             AvaloniaProperty.RegisterDirect<PartControl, string>(
                 nameof(Text),
                 o => o.Text,
                 (o, v) => o.Text = v);
+
         public static readonly DirectProperty<PartControl, bool> SelectedProperty =
             AvaloniaProperty.RegisterDirect<PartControl, bool>(
                 nameof(Selected),
                 o => o.Selected,
                 (o, v) => o.Selected = v);
+
         public static readonly DirectProperty<PartControl, double> FadeInProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(FadeIn),
                 o => o.FadeIn,
                 (o, v) => o.FadeIn = v);
+
         public static readonly DirectProperty<PartControl, double> FadeOutProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(FadeOut),
                 o => o.FadeOut,
                 (o, v) => o.FadeOut = v);
+
         public static readonly DirectProperty<PartControl, double> PianoRollViewTickOffsetProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(PianoRollViewTickOffset),
                 o => o.PianoRollViewTickOffset,
                 (o, v) => o.PianoRollViewTickOffset = v);
+
         public static readonly DirectProperty<PartControl, double> PianoRollViewViewportTicksProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(PianoRollViewViewportTicks),
@@ -87,42 +97,52 @@ namespace OpenUtau.App.Controls {
             get => tickWidth;
             set => SetAndRaise(TickWidthProperty, ref tickWidth, value);
         }
+
         public double TrackHeight {
             get => trackHeight;
             set => SetAndRaise(TrackHeightProperty, ref trackHeight, value);
         }
+
         public double ViewWidth {
             get { return viewWidth; }
             set { SetAndRaise(ViewWidthProperty, ref viewWidth, value); }
         }
+
         public double TickOffset {
             get { return tickOffset; }
             set { SetAndRaise(TickOffsetProperty, ref tickOffset, value); }
         }
+
         public Point Offset {
             get { return offset; }
             set { SetAndRaise(OffsetProperty, ref offset, value); }
         }
+
         public string Text {
             get { return text; }
             set { SetAndRaise(TextProperty, ref text, value); }
         }
+
         public bool Selected {
             get { return selected; }
             set { SetAndRaise(SelectedProperty, ref selected, value); }
         }
+
         public double FadeIn {
             get { return fadeIn * TickWidth; }
             set { SetAndRaise(FadeInProperty, ref fadeIn, value); }
         }
+
         public double FadeOut {
             get { return Width - (fadeOut * TickWidth); }
             set { SetAndRaise(FadeOutProperty, ref fadeOut, value); }
         }
+
         public double PianoRollViewTickOffset {
             get => pianoRollViewTickOffset;
             set => SetAndRaise(PianoRollViewTickOffsetProperty, ref pianoRollViewTickOffset, value);
         }
+
         public double PianoRollViewViewportTicks {
             get => pianoRollViewViewportTicks;
             set => SetAndRaise(PianoRollViewViewportTicksProperty, ref pianoRollViewViewportTicks, value);
@@ -150,8 +170,7 @@ namespace OpenUtau.App.Controls {
         private int[] bitmapData;
 
         private List<RenderPhraseRangeRect> phraseRangeRects = [];
-        private double tolerance = 0d;
-        
+
         public PartControl(UPart part, PartsCanvas canvas) {
             this.part = part;
             partsCanvas = canvas;
@@ -160,14 +179,19 @@ namespace OpenUtau.App.Controls {
 
             unbinds.Add(this.Bind(TickWidthProperty, canvas.GetObservable(PartsCanvas.TickWidthProperty)));
             unbinds.Add(this.Bind(TrackHeightProperty, canvas.GetObservable(PartsCanvas.TrackHeightProperty)));
-            unbinds.Add(this.Bind(WidthProperty, canvas.GetObservable(PartsCanvas.TickWidthProperty).Select(tickWidth => tickWidth * part.Duration)));
+            unbinds.Add(this.Bind(WidthProperty,
+                canvas.GetObservable(PartsCanvas.TickWidthProperty).Select(tickWidth => tickWidth * part.Duration)));
             unbinds.Add(this.Bind(HeightProperty, canvas.GetObservable(PartsCanvas.TrackHeightProperty)));
             unbinds.Add(this.Bind(OffsetProperty, canvas.WhenAnyValue(x => x.TickOffset, x => x.TrackOffset,
                 (tick, track) => new Point(-tick * TickWidth, -track * TrackHeight))));
-            unbinds.Add(this.Bind(ViewWidthProperty, canvas.WhenAnyValue(x => x.Bounds).Select(bounds => bounds.Width)));
-            unbinds.Add(this.Bind(TickOffsetProperty, canvas.WhenAnyValue(x => x.TickOffset).Select(tickOffset => tickOffset)));
-            unbinds.Add(this.Bind(PianoRollViewTickOffsetProperty, canvas.GetObservable(PartsCanvas.PianoRollViewTickOffsetProperty)));
-            unbinds.Add(this.Bind(PianoRollViewViewportTicksProperty, canvas.GetObservable(PartsCanvas.PianoRollViewViewportTicksProperty)));
+            unbinds.Add(this.Bind(ViewWidthProperty,
+                canvas.WhenAnyValue(x => x.Bounds).Select(bounds => bounds.Width)));
+            unbinds.Add(this.Bind(TickOffsetProperty,
+                canvas.WhenAnyValue(x => x.TickOffset).Select(tickOffset => tickOffset)));
+            unbinds.Add(this.Bind(PianoRollViewTickOffsetProperty,
+                canvas.GetObservable(PartsCanvas.PianoRollViewTickOffsetProperty)));
+            unbinds.Add(this.Bind(PianoRollViewViewportTicksProperty,
+                canvas.GetObservable(PartsCanvas.PianoRollViewViewportTicksProperty)));
 
             SetPosition();
             Refersh();
@@ -191,10 +215,11 @@ namespace OpenUtau.App.Controls {
                 change.Property == TickWidthProperty) {
                 SetPosition();
             }
+
             if (change.Property == PianoRollViewTickOffsetProperty ||
                 change.Property == PianoRollViewViewportTicksProperty ||
                 change.Property == SelectedProperty ||
-                change.Property == TextProperty || 
+                change.Property == TextProperty ||
                 change.Property == FadeInProperty ||
                 change.Property == FadeOutProperty) {
                 InvalidateVisual();
@@ -227,11 +252,36 @@ namespace OpenUtau.App.Controls {
                     if (phraseRangeRects.Count == 0 || phraseRangeRects.Count != voicePart.renderPhrases.Count) {
                         for (var index = 0; index < voicePart.renderPhrases.Count; index++) {
                             RenderPhrase phrase = voicePart.renderPhrases[index];
-                            RenderPhraseRangeRect rect = new RenderPhraseRangeRect(phrase.position, phrase.end);
-                            
+                            RenderPhraseRangeRect rect;
+                            if (index == 0) {
+                                rect = new RenderPhraseRangeRect(
+                                    phrase.position,
+                                    phrase.end,
+                                    part.position,
+                                    part.position + phrase.end
+                                );
+                            } else if (index == voicePart.renderPhrases.Count) {
+                                RenderPhrase prePhrase = voicePart.renderPhrases[index - 1];
+                                rect = new RenderPhraseRangeRect(
+                                    phrase.position,
+                                    phrase.end,
+                                    part.position + prePhrase.end,
+                                    part.position + part.End
+                                );
+                            } else {
+                                RenderPhrase prePhrase = voicePart.renderPhrases[index - 1];
+                                rect = new RenderPhraseRangeRect(
+                                    phrase.position,
+                                    phrase.end,
+                                    part.position + prePhrase.end,
+                                    part.position + phrase.end
+                                );
+                            }
+
                             phraseRangeRects.Add(rect);
                         }
                     }
+
                     DrawBackground(context, true);
                 } else {
                     phraseRangeRects.Clear();
@@ -246,7 +296,7 @@ namespace OpenUtau.App.Controls {
                     textLayout.Draw(context, new Point());
                 }
 
-                RenderForVoicePart(context, voicePart); 
+                RenderForVoicePart(context, voicePart);
             } else if (part is UWavePart wavePart) {
                 // Background
                 // We don't recalculate phrases in a WavePart, DrawBackground checks for this.
@@ -275,6 +325,7 @@ namespace OpenUtau.App.Controls {
                     minTone -= additional;
                     maxTone += additional;
                 }
+
                 using var pushedState = context.PushTransform(Matrix.CreateScale(1, trackHeight / (maxTone - minTone)));
                 foreach (var note in voicePart.notes) {
                     var start = new Point((int)(note.position * tickWidth), maxTone - note.tone);
@@ -282,6 +333,7 @@ namespace OpenUtau.App.Controls {
                     context.DrawLine(notePen, start, end);
                 }
             }
+
             // Highlight
             if (voicePart == partsCanvas.PianoRollOpenPart && pianoRollViewViewportTicks > 0) {
                 const double inset = 1;
@@ -289,7 +341,8 @@ namespace OpenUtau.App.Controls {
                 double innerHeight = Math.Max(0, Height - 2 * inset);
 
                 double vpLeft = Math.Max(0, pianoRollViewTickOffset * tickWidth);
-                double vpRight = Math.Min(innerWidth, (pianoRollViewTickOffset + pianoRollViewViewportTicks) * tickWidth);
+                double vpRight = Math.Min(innerWidth,
+                    (pianoRollViewTickOffset + pianoRollViewViewportTicks) * tickWidth);
 
                 if (vpRight > vpLeft + 1) {
                     var vpRect = new Rect(inset + vpLeft, inset, vpRight - vpLeft, innerHeight);
@@ -312,18 +365,22 @@ namespace OpenUtau.App.Controls {
             } catch (Exception e) {
                 Log.Error(e, "failed to draw bitmap");
             }
+
             // Fade
             var brush = Brushes.White;
             var pen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
             using (var state = context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
                 context.DrawGeometry(brush, pen, pointGeometry);
             }
+
             if (wavePart.fadein > 0) {
                 context.DrawLine(fadePen, new Point(2, Height - 2), new Point(FadeIn + 1, 2));
             }
+
             using (var state = context.PushTransform(Matrix.CreateTranslation(FadeOut - 6, 0))) {
                 context.DrawGeometry(brush, pen, pointGeometry);
             }
+
             if (wavePart.fadeout > 0) {
                 context.DrawLine(fadePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
             }
@@ -333,74 +390,41 @@ namespace OpenUtau.App.Controls {
             var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
             var renderingBrush = Selected ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi;
             if (phraseRangeRects.Count == 0) {
-                context.DrawRectangle(isRendering ? renderingBrush : backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+                context.DrawRectangle(isRendering ? renderingBrush : backgroundBrush, null,
+                    new Rect(1, 0, Width - 1, Height - 1), 4, 4);
                 return;
             }
-            
-            // Render first phrase - part position/phrase end
-            var renderPhraseRange = phraseRangeRects[0];
-            context.DrawRectangle(renderPhraseRange.Rendered ?
-                backgroundBrush : 
-                renderingBrush, null,
-                new RoundedRect(renderPhraseRange.GetRectangle(new Point(1, 0), tickWidth, Height - 1,
-                        (renderPhraseRange.StartTick - part.position) + tickWidth,
-                        0),
-                    new Vector(4, 4), new Vector(0, 0), new Vector(0, 0), new Vector(4, 4))
-                );
-            
-            // Render other phrases - past phrase end/phrase end
-            for (var index = 1; index < phraseRangeRects.Count - 1; index++) {
-                RenderPhraseRangeRect prevRangeRect = phraseRangeRects[index - 1];
-                RenderPhraseRangeRect currRangeRect = phraseRangeRects[index];
 
-                var prevRect = prevRangeRect.GetRectangle()!.Value;  //TODO determine if null checking required
-                var currRect = currRangeRect.GetRectangle(new Point(0, 0), tickWidth,
-                    Height - 1,
-                    (currRangeRect.StartTick - prevRangeRect.EndTick) * tickWidth,
-                    0);
-
-                // Check for floating point precision
-                Rect renderRect;
-                if (Math.Abs(prevRect.Right - currRect.Left) > tolerance) {
-                    renderRect = new Rect(prevRect.TopLeft, currRect.BottomRight);
-                } else {
-                    renderRect = currRect;
-                }
-                
-                context.DrawRectangle(phraseRangeRects[index].Rendered ? backgroundBrush : renderingBrush,
-                    null,
-                        new RoundedRect(renderRect, new Vector(0, 0)));
+            List<RoundedRect> renderedBlocks = [];
+            
+            var firstPhraseRange = phraseRangeRects[0];
+            int width = (int)((firstPhraseRange.PostPhraseTick - firstPhraseRange.PrePhraseTick) * tickWidth);
+            var firstPhraseRect = new RoundedRect(
+                new Rect(1, 0,
+                    width, Height-1),
+                new Vector(4, 4), new Vector(0, 0), new Vector(0, 0), new Vector(4, 4));
+            context.DrawRectangle(firstPhraseRange.Rendered ? backgroundBrush : renderingBrush, null, firstPhraseRect);
+            renderedBlocks.Add(firstPhraseRect);
+            
+            for (int i = 1; i < phraseRangeRects.Count - 1; i++) {
+                var phraseRange = phraseRangeRects[i];
+                int startPos = (int)renderedBlocks[i - 1].Rect.Right;
+                var phraseRect = new Rect(startPos, 0,
+                    (phraseRange.PostPhraseTick - phraseRange.PrePhraseTick) * tickWidth, Height - 1);
+                context.DrawRectangle(phraseRange.Rendered ? backgroundBrush : renderingBrush, null, phraseRect);
+                renderedBlocks.Add(phraseRect);
             }
             
-            // Render last phrase - past phrase end / part end
-            RenderPhraseRangeRect prevLastRangeRect = phraseRangeRects[^2];
-            RenderPhraseRangeRect lastRangeRect = phraseRangeRects[^1];
-
-            var prevLastRect = prevLastRangeRect.GetRectangle()!.Value; //TODO determine if null checking required
-            var lastRect = lastRangeRect.GetRectangle(new Point(0, 0), tickWidth,
-                Height - 1,
-                (lastRangeRect.StartTick - prevLastRangeRect.EndTick) * tickWidth,
-                (part.End - lastRangeRect.EndTick) * tickWidth);
-
-            // Check for floating point precision
-            Rect tempRenderRect;
-            if (Math.Abs(prevLastRect.Right - lastRect.Left) > tolerance) {
-                tempRenderRect = new Rect(prevLastRect.TopLeft, lastRect.BottomRight);
-            } else {
-                tempRenderRect = lastRect;
-            }
-            
-            context.DrawRectangle(renderPhraseRange.Rendered ?
-                backgroundBrush : 
-                renderingBrush, null, 
-                new RoundedRect(tempRenderRect,
-                    new Vector(0, 0),
-                    new Vector(4, 4),
-                    new Vector(4, 4),
-                    new Vector(0, 0)
-                    ));
+            var lastPhraseRange = phraseRangeRects[^1];
+            int lastPos = (int)renderedBlocks[^1].Rect.Right;
+            var lastPhraseRect = new RoundedRect(
+                    new Rect(lastPos, 0,
+                        (part.Duration - lastPhraseRange.PrePhraseTick) * tickWidth, Height-1),
+                    new Vector(0, 0), new Vector(4, 4), new Vector(4, 4), new Vector(0, 0)
+                    );
+            context.DrawRectangle(lastPhraseRange.Rendered ? backgroundBrush : renderingBrush, null, lastPhraseRect);
         }
-        
+
         private WriteableBitmap GetBitmap(double width) {
             int w = 128 * (int)(width / 128 + 1);
             if (bitmap == null || bitmap.Size.Width < w) {
@@ -422,6 +446,7 @@ namespace OpenUtau.App.Controls {
                 wavePart.Peaks.Result == null) {
                 return;
             }
+
             var wholePeaks = wavePart.Peaks.Result;
             int skipCount = (int)(wavePart.peaksSampleRate * wavePart.GetSkipMs(Core.DocManager.Inst.Project) / 1000);
             if (skipCount >= wholePeaks[0].Length) return;
@@ -436,11 +461,13 @@ namespace OpenUtau.App.Controls {
                 var newSamples = wholePeaks[i].Samples.Skip(skipCount);
                 peaks[i] = new DiscreteSignal(wavePart.peaksSampleRate, newSamples);
             }
+
             int x = 0;
             if (TickOffset <= wavePart.position) {
                 // Part starts in or to the right of view.
                 x = (int)(TickWidth * (wavePart.position - TickOffset));
             }
+
             int posTick = (int)(TickOffset + x / TickWidth);
             double posMs = timeAxis.TickPosToMsPos(posTick);
             double offsetMs = timeAxis.TickPosToMsPos(wavePart.position);
@@ -452,13 +479,15 @@ namespace OpenUtau.App.Controls {
                     if (posTick >= wavePart.position + wavePart.Duration) {
                         break;
                     }
+
                     int nextPosTick = (int)(TickOffset + (x + 1) / TickWidth);
                     double nexPosMs = timeAxis.TickPosToMsPos(nextPosTick);
                     int nextSampleIndex = (int)(wavePart.peaksSampleRate * (nexPosMs - offsetMs) * 0.001);
                     nextSampleIndex = Math.Clamp(nextSampleIndex, 0, peaks[0].Length);
                     if (nextSampleIndex > sampleIndex) {
                         for (int i = 0; i < peaks.Length; ++i) {
-                            var segment = new ArraySegment<float>(peaks[i].Samples, sampleIndex, nextSampleIndex - sampleIndex);
+                            var segment = new ArraySegment<float>(peaks[i].Samples, sampleIndex,
+                                nextSampleIndex - sampleIndex);
                             float min = segment.Min();
                             float max = segment.Max();
                             double ySpan = peaks.Length == 1 ? monoChnlAmp : stereoChnlAmp;
@@ -468,11 +497,13 @@ namespace OpenUtau.App.Controls {
                                 (int)(ySpan * (1 + -max) + yOffset) + 2);
                         }
                     }
+
                     x++;
                     posTick = nextPosTick;
                     posMs = nexPosMs;
                     sampleIndex = nextSampleIndex;
                 }
+
                 Marshal.Copy(bitmapData, 0, frameBuffer.Address, bitmapData.Length);
             }
         }
@@ -484,6 +515,7 @@ namespace OpenUtau.App.Controls {
                 y2 = y1;
                 y1 = temp;
             }
+
             for (var y = y1; y <= y2; ++y) {
                 data[x + width * y] = white;
             }
@@ -500,9 +532,10 @@ namespace OpenUtau.App.Controls {
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is PhraseRenderStateNotification state) {
                 if (!state.Part.Equals(part)) return;
-                
+
                 foreach (var phraseRangeRect in phraseRangeRects) {
-                    if (phraseRangeRect.StartTick.Equals(state.StartTick) && phraseRangeRect.EndTick.Equals(state.EndTick)) {
+                    if (phraseRangeRect.PhraseStartTick.Equals(state.StartTick) &&
+                        phraseRangeRect.PhraseEndTick.Equals(state.EndTick)) {
                         phraseRangeRect.Rendered = state.Rendered;
                         InvalidateVisual();
                         return;
@@ -511,31 +544,14 @@ namespace OpenUtau.App.Controls {
             }
         }
     }
-    
-    
-    class RenderPhraseRangeRect {
-        public readonly int StartTick;
-        public readonly int EndTick;
-        public bool Rendered;
 
-        private Rect? rect;
 
-        public RenderPhraseRangeRect(int startTick, int endTick, bool rendered = false) {
-            StartTick = startTick;
-            EndTick = endTick;
-            Rendered = rendered;
-        }
-
-        // LeadPos/TailPos is relative
-        public Rect GetRectangle(Point offset, double tickWidth, double height, double leadPos, double tailPos) {
-            int startX = (int)((StartTick * tickWidth) + offset.X - leadPos);
-            int endX = (int)((EndTick * tickWidth) + offset.X + tailPos);
-            rect = new Rect(startX, offset.Y, endX - startX, height);
-            return rect.Value;
-        }
-
-        public Rect? GetRectangle() {
-            return rect;
-        }
+    // Refers to absolute tick position
+    record RenderPhraseRangeRect(int PhraseStartTick, int PhraseEndTick, int PrePhraseTick, int PostPhraseTick, bool Rendered = false) {
+        public readonly int PhraseStartTick = PhraseStartTick;
+        public readonly int PhraseEndTick = PhraseEndTick;
+        public readonly int PrePhraseTick = PrePhraseTick;
+        public readonly int PostPhraseTick = PostPhraseTick;
+        public bool Rendered = Rendered;
     }
 }
