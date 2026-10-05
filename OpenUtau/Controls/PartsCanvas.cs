@@ -192,14 +192,12 @@ namespace OpenUtau.App.Controls {
 
         void Add(UPart part) {
             var control = new PartControl(part, this);
-            DocManager.Inst.AddSubscriber(control);
             Children.Add(control);
             partControls.Add(part, control);
         }
 
         void Remove(UPart part) {
             var control = partControls[part];
-            DocManager.Inst.RemoveSubscriber(control);
             control.Dispose();
             partControls.Remove(part);
             Children.Remove(control);

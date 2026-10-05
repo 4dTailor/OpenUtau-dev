@@ -25,7 +25,6 @@ namespace OpenUtau.App {
         public static IPen AccentPen1Thickness3 = new Pen(Brushes.White);
         public static IPen AccentPen1Thickness4 = new Pen(Brushes.White);
         public static IBrush AccentBrush1Semi = Brushes.Gray;
-        public static IBrush AccentBrush1Disabled = Brushes.DimGray;
         public static IBrush AccentBrush2 = Brushes.Gray;
         public static IPen AccentPen2 = new Pen(Brushes.White);
         public static IPen AccentPen2Thickness2 = new Pen(Brushes.White);
@@ -56,7 +55,6 @@ namespace OpenUtau.App {
         public static IBrush ExpShadowNameBrush = Brushes.White;
         public static IBrush ExpActiveBrush = Brushes.Black;
         public static IBrush ExpActiveNameBrush = Brushes.White;
-        
 
         public static List<TrackColor> TrackColors = new List<TrackColor>(){
                 new TrackColor("Pink", "#F06292", "#EC407A", "#F48FB1", "#FAC7D8"),
@@ -154,10 +152,6 @@ namespace OpenUtau.App {
                 RealCurveFillBrush = (IBrush)outVar!;
             }
             if (resDict.TryGetResource("RealCurveStrokeBrush", themeVariant, out outVar)) {
-                RealCurveStrokeBrush = (IBrush)outVar!;
-                RealCurvePen = new Pen(RealCurveStrokeBrush, 2, DashStyle.Dash);
-            }
-            if (resDict.TryGetResource("Accent1Disabled", themeVariant, out outVar)) {
                 RealCurveStrokeBrush = (IBrush)outVar!;
                 RealCurvePen = new Pen(RealCurveStrokeBrush, 2, DashStyle.Dash);
             }
