@@ -420,6 +420,10 @@ namespace OpenUtau.App.Controls {
             }
         }
 
+        public void UpdateRenderStatus(int startTick, int endTick, bool rendered) {
+            
+        }
+        
         public void Report(int value) {
         }
 

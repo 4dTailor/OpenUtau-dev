@@ -10,6 +10,7 @@ using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 using ReactiveUI.Primitives;
+using Serilog;
 
 namespace OpenUtau.App.Controls {
     class PartsCanvas : Canvas {
@@ -203,6 +204,16 @@ namespace OpenUtau.App.Controls {
             Children.Remove(control);
         }
 
+        public void HandlePhraseRenderStateEvent(UVoicePart part, int startTick, int endTick, bool rendered) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    Log.Information($"{part.DisplayName} {startTick}-{endTick}: {rendered}");
+                    control.Value.UpdateRenderStatus(startTick, endTick, rendered);
+                    return;
+                }
+            }
+        }
+        
         void InvalidatePartViewport() {
             if (_pianoRollOpenPart != null && partControls.TryGetValue(_pianoRollOpenPart, out var control)) {
                 control.InvalidateVisual();
