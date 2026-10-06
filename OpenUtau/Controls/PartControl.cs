@@ -219,10 +219,9 @@ namespace OpenUtau.App.Controls {
 
         public override void Render(DrawingContext context) {
             var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
-            var renderingBrush = Selected ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi;
             // Background
             if (Preferences.Default.RenderStatusInTrackBar && part is UVoicePart) {
-                context.DrawRectangle(renderingBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+                context.DrawRectangle(Selected ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
             } else {
                 context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
             }
@@ -241,22 +240,35 @@ namespace OpenUtau.App.Controls {
 
                 List<Rect> renderBlocks = [];
                 
-                // Draw part phrase blocks - accounting for whitespace.
+                // Draw part phrase blocks over background - accounting for whitespace.
                 for (int i = 0; i < renderPhraseStates.Count; i++) {
                     var (phrase, rendered) = renderPhraseStates.ElementAt(i);
+                    
+                    int phraseStart = (int)(phrase.position * tickWidth);
+                    int startX = (int)renderBlocks.ElementAtOrDefault(i-1).Right;
+                    int width = (int)((phrase.end * tickWidth - phrase.position * tickWidth) + (phraseStart - startX));
+                    int endX = startX + width;
 
-                    double initial = renderBlocks.ElementAtOrDefault(i-1).Right;
-                    double phraseStart = (phrase.position * tickWidth);
-                    double startX = phraseStart;
-                    double width = (phrase.end * tickWidth - phrase.position * tickWidth) + (phraseStart - startX);
-                    double endX = startX + width;
+                    if (i == renderPhraseStates.Count - 1) endX = (int)(part.End * tickWidth);
                     
                     Point topLeft = new Point(startX, 1);
-                    Point bottomRight = new Point(Math.Truncate(endX), Height - 1);
+                    Point bottomRight = new Point(endX, Height - 1);
                     
                     var rect = new Rect(topLeft, bottomRight);
-                    renderBlocks.Add(rect); 
-                    context.DrawRectangle(rendered ? backgroundBrush : renderingBrush, null, rect);
+                    renderBlocks.Add(rect);
+                    
+                    // Draw part phrase blocks if phrase is rendered.
+                    if (rendered) {
+                        if (i == 0) {
+                            var roundedRect = new RoundedRect(rect, new CornerRadius(4, 0, 0, 4));
+                            context.DrawRectangle(backgroundBrush, null, roundedRect);
+                        } else if (i == renderPhraseStates.Count - 1) {
+                            var roundedRect = new RoundedRect(rect, new CornerRadius(0, 4, 4, 0));
+                            context.DrawRectangle(backgroundBrush, null, roundedRect);
+                        } else {
+                            context.DrawRectangle(backgroundBrush, null, rect);
+                        }
+                    }
                 }
                 
                 // Notes
