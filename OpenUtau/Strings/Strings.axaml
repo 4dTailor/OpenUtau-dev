@@ -770,6 +770,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>
   <system:String x:Key="prefs.appearance.showicon">Show icon on piano roll</system:String>
   <system:String x:Key="prefs.appearance.reduceanimations">Reduce animations</system:String>
+  <system:String x:Key="prefs.appearance.renderbackground">Show render status in track background</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Show portrait on piano roll</system:String>
   <system:String x:Key="prefs.appearance.sortorder">Singer name display language</system:String>
   <system:String x:Key="prefs.appearance.theme">Theme</system:String>
@@ -820,7 +821,6 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.playback.systemdefault">Use system default device</system:String>
   <system:String x:Key="prefs.playback.test">Test</system:String>
   <system:String x:Key="prefs.rendering">Rendering</system:String>
-  <system:String x:Key="prefs.rendering.statusintrackbackground">Show Render Status in Track Background</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Default renderer (for classic voicebanks)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Render Depth</system:String>
   <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Render Steps for Acoustic</system:String>
