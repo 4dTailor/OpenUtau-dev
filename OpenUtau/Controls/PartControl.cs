@@ -469,14 +469,36 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        public void UpdateRenderStatus(int startTick, int endTick, bool rendered) {
-            foreach (var phrase in renderPhraseStates) {
-                if (phrase.Key.position.Equals(startTick) && phrase.Key.end.Equals(endTick)) {
-                    renderPhraseStates[phrase.Key] = rendered;
-                    InvalidateVisual();
-                    return;
+        /// <summary>
+        /// Updates the internal record of rendered phrases, then invalidates the visual to render updated visuals.
+        /// Supports updating multiple phrases based on startTick/endTick positions.
+        /// </summary>
+        public void UpdateRenderStatus(Range tickRange, bool rendered) {
+            bool triggerRender = false;
+            foreach (var phraseState in renderPhraseStates) {
+                if (phraseState.Key.position >= tickRange.Start.Value && phraseState.Key.position <= tickRange.End.Value) {
+                    renderPhraseStates[phraseState.Key] = rendered;
+                    triggerRender = true;
                 }
             }
+            if (triggerRender) InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Updates the internal record of the render phrase, and invalidates the visual to render new visuals.
+        /// </summary>
+        public void UpdateRenderStatus(RenderPhrase phrase, bool rendered) {
+            renderPhraseStates[phrase] = rendered;
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Resets the internal record of the render phrases, prompting a render phrase recalculation,
+        /// and invalidates the visual to redraw new render blocks.
+        /// </summary>
+        public void ResetRenderBlocks() {
+            renderPhraseStates.Clear();
+            InvalidateVisual();
         }
         
         public void Report(int value) {

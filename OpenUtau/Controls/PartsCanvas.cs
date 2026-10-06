@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Controls;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 using ReactiveUI.Primitives;
@@ -204,11 +205,19 @@ namespace OpenUtau.App.Controls {
             Children.Remove(control);
         }
 
-        public void HandlePhraseRenderStateEvent(UVoicePart part, int startTick, int endTick, bool rendered) {
+        public void HandlePhraseRenderStateEvent(UVoicePart part, Range tickRange, bool rendered) {
             foreach (var control in partControls) {
                 if (control.Key.Equals(part)) {
-                    Log.Information($"{part.DisplayName} {startTick}-{endTick}: {rendered}");
-                    control.Value.UpdateRenderStatus(startTick, endTick, rendered);
+                    control.Value.UpdateRenderStatus(tickRange, rendered);
+                    return;
+                }
+            }
+        }
+        
+        public void HandlePhraseRenderStateEvent(UVoicePart part, RenderPhrase phrase, bool rendered) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    control.Value.UpdateRenderStatus(phrase, rendered);
                     return;
                 }
             }
