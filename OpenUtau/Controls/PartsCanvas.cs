@@ -6,12 +6,10 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using OpenUtau.App.ViewModels;
-using OpenUtau.Core;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 using ReactiveUI.Primitives;
-using Serilog;
 
 namespace OpenUtau.App.Controls {
     class PartsCanvas : Canvas {

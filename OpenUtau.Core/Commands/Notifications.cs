@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using NAudio.CoreAudioApi;
-using OpenUtau.Core.Pipeline;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 
