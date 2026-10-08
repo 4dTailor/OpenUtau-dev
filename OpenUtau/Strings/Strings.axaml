@@ -985,6 +985,23 @@ General
   <system:String x:Key="tip.notes.zoomx">◀ Scroll here to zoom horizontally ▶</system:String>
   <system:String x:Key="tip.notes.zoomy">Scroll here to zoom vertically ▶</system:String>
   <system:String x:Key="tip.playback.loop">Loop playback</system:String>
+  <system:String x:Key="tip.loading.1">Tip: Switching to a classic resampler can change sound quality</system:String>
+  <system:String x:Key="tip.loading.2">Tip: Expressive synthesis: use pitch tuning and expressions found in the lower UI to model vocal nuance</system:String>
+  <system:String x:Key="tip.loading.3">Tip: When using Japanese VCV or CVVC voicebanks, switch from DEFAULT to JA VCV &amp; VCCV</system:String>
+  <system:String x:Key="tip.loading.4">Tip: Need words to be read [r eh d] correctly? Use phonetic hints, like this one!</system:String>
+  <system:String x:Key="tip.loading.5">Tip: Vocaloids are not made to be used in OpenUTAU!</system:String>
+  <system:String x:Key="tip.loading.6">Tip: Press Ctrl + ↑/↓ to transpose notes by an octave.</system:String>
+  <system:String x:Key="tip.loading.7">Tip: Use ↑ or ↓ to shift selected notes by 1 semitone.</system:String>
+  <system:String x:Key="tip.loading.8">Tip: Press Alt + Space to render only the selected notes.</system:String>
+  <system:String x:Key="tip.loading.9">Tip: Copy notes, then right-click → Paste Parameters to apply copied parameters.</system:String>
+  <system:String x:Key="tip.loading.10">Tip: Right-click the solo button to access more solo options.</system:String>
+  <system:String x:Key="tip.loading.11">Tip: Right-click the mute button to access more mute options.</system:String>
+  <system:String x:Key="tip.loading.12">Tip: Double-click a part to open it in the piano roll.</system:String>
+  <system:String x:Key="tip.loading.13">Tip: Enable Direct Param to skip synthesis and play audio instantly.</system:String>
+  <system:String x:Key="tip.loading.14">Tip: Press the / key to toggle note expressions.</system:String>
+  <system:String x:Key="tip.loading.15">Tip: To install a singer, you can drag/drop a zipped file into the main window or go to Tools > Install Singer.</system:String>
+  <system:String x:Key="tip.loading.16">Tip: Make sure to pick the right type of phonemizer if your UTAU is in another language!</system:String>
+  <system:String x:Key="tip.loading.17">Tip: Scroll up or down on the BPM selector wheel to change the BPM.</system:String>
 
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>

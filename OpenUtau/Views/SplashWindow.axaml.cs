@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -48,9 +50,27 @@ namespace OpenUtau.App.Views {
             }
             started = true;
 
+            string[] tips = FindLoadingTips();
+            if (tips.Length > 0) {
+                this.LoadingTip.Text = tips[new Random().Next(0, tips.Length - 1)];
+            }
+            
             Start();
         }
 
+        private string[] FindLoadingTips() {
+            List<string> tips = [];
+            int index = 1;
+            while (this.TryFindResource("tip.loading." + index++, this.ActualThemeVariant, out var found)) {
+                if (found is string value) {
+                    tips = tips.Append(value).ToList();
+                } else {
+                    return tips.ToArray();
+                }
+            }
+            return tips.ToArray();
+        }
+        
         private void Start() {
             var mainThread = Thread.CurrentThread;
             var mainScheduler = TaskScheduler.FromCurrentSynchronizationContext();
