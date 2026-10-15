@@ -204,12 +204,8 @@ namespace OpenUtau.Core {
                     return;
                 }
                 bool untitled = string.IsNullOrEmpty(Project.FilePath);
-                if (untitled) {
-                    Directory.CreateDirectory(PathManager.Inst.BackupsPath);
-                }
-                string dir = untitled
-                    ? PathManager.Inst.BackupsPath
-                    : Path.GetDirectoryName(Project.FilePath);
+                Directory.CreateDirectory(PathManager.Inst.BackupsPath);
+                string dir = PathManager.Inst.BackupsPath;
                 string filename = untitled
                     ? "Untitled"
                     : Path.GetFileNameWithoutExtension(Project.FilePath);
@@ -232,12 +228,8 @@ namespace OpenUtau.Core {
             }
             try {
                 bool untitled = string.IsNullOrEmpty(Project.FilePath);
-                if (untitled) {
-                    Directory.CreateDirectory(PathManager.Inst.BackupsPath);
-                }
-                string dir = untitled
-                    ? PathManager.Inst.BackupsPath
-                    : Path.GetDirectoryName(Project.FilePath);
+                Directory.CreateDirectory(PathManager.Inst.BackupsPath);
+                string dir = PathManager.Inst.BackupsPath;
                 string filename = untitled
                     ? "Untitled"
                     : Path.GetFileNameWithoutExtension(Project.FilePath);
