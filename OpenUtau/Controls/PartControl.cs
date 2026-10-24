@@ -255,10 +255,10 @@ namespace OpenUtau.App.Controls {
                         var (phrase, rendered) = phraseBlocks[i];
 
                         int startX = (int) phraseRects.ElementAtOrDefault(i-1).Right;
-                        int endX = (int)(phrase.end * tickWidth);
+                        int endX = (int)((phrase.end - part.position) * tickWidth);
 
                         // Extend to end of part if notes aren't at end of part.
-                        if (i == phraseBlocks.Length - 1) endX = (int)(part.End * tickWidth);
+                        if (i == phraseBlocks.Length - 1) endX = (int)((part.End - part.position) * tickWidth);
 
                         Point topLeft = new Point(startX, 1);
                         Point bottomRight = new Point(endX, Height - 1);
@@ -451,8 +451,10 @@ namespace OpenUtau.App.Controls {
         /// <summary>
         /// Updates render status of phrases within range, then updates visual if any change.
         /// Supports updating multiple phrases if any part of phrase within startTick/endTick.
+        /// startTick/endTick use the absolute position of the phrase.
         /// </summary>
         public void UpdateRenderStatus(int startTick, int endTick, bool rendered) {
+            Log.Debug("Updating render status {0}-{1} to {2}", startTick, endTick, rendered ? "rendered": "unrendered");
             if (startTick > endTick) {
                 Log.Error("StartTick cannot be greater than EndTick in UpdateRenderStatus, update ignored.");
                 return;
@@ -463,7 +465,7 @@ namespace OpenUtau.App.Controls {
                 var phraseBlock = phraseBlocks[index];
 
                 // Filters phrases outside range.
-                if (phraseBlock.phrase.end <= startTick || endTick >= phraseBlock.phrase.position) continue;
+                if (phraseBlock.phrase.end <= startTick || endTick <= phraseBlock.phrase.position) continue;
                 if (phraseBlock.rendered == rendered) continue;
 
                 phraseBlocks[index] = phraseBlock with { rendered = rendered };
@@ -477,6 +479,7 @@ namespace OpenUtau.App.Controls {
         /// Updates render status of phrase if exists, then updates visual if it changes
         /// </summary>
         public void UpdateRenderStatus(RenderPhrase phrase, bool rendered) {
+            Log.Debug("Updating render status {0} to {1}", phrase.position, rendered ? "rendered": "unrendered");
             for (var i = 0; i < phraseBlocks.Length; i++) {
                 var phraseBlock = phraseBlocks[i];
 
@@ -524,11 +527,7 @@ namespace OpenUtau.App.Controls {
         /// Sets all phrase blocks, and updates visual.
         /// </summary>
         public void SetAllBlocks(bool state) {
-            for (int i = 0; i < phraseBlocks.Length; i++) {
-                var phraseBlock = phraseBlocks[i];
-                phraseBlocks[i] = phraseBlock with { rendered = state };
-            }
-            InvalidateVisual();
+            UpdateRenderStatus(part.position, part.End, state);
         }
 
         public void Report(int value) { }
