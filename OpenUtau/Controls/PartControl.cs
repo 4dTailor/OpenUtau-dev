@@ -512,14 +512,19 @@ namespace OpenUtau.App.Controls {
                 .ToList();
 
             foreach (var partPhrase in voicePart.renderPhrases) {
+                bool added = false;
                 // Search for rendered phrase that exists in voicePart
                 foreach (var renderedPhrase in renderedPhrases) {
                     if (partPhrase.hash == renderedPhrase.hash) {
                         newPhraseBlocks.Add((partPhrase, true));
+                        added = true;
                         break;
                     }
                 }
-                newPhraseBlocks.Add((partPhrase, false));
+
+                if (!added) {
+                    newPhraseBlocks.Add((partPhrase, false));
+                }
             }
 
             phraseBlocks = newPhraseBlocks.ToArray();
