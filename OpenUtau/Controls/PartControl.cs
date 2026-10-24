@@ -495,28 +495,31 @@ namespace OpenUtau.App.Controls {
 
         /// <summary>
         /// Updates the phrase blocks based on voicePart, retains render status if phrases match.
+        /// Computationally expensive.
         /// </summary>
         /// <param name="voicePart">VoicePart to check render blocks by</param>
         /// <returns>Visual update required</returns>
         public bool RebuildPhraseBlocks(UVoicePart voicePart) {
             bool requiresVisualUpdate = voicePart.renderPhrases.Count != phraseBlocks.Length;
-            List<(RenderPhrase phrase, bool rendered)> newPhraseBlocks = [];
             Log.Information("Rebuilding phrase blocks for {0}", voicePart.DisplayName);
 
-            for (int i = 0; i < voicePart.renderPhrases.Count; i++) {
-                var partPhrase = voicePart.renderPhrases[i];
-                var newPhraseBlock = (phrase: partPhrase, rendered: false);
+            List<(RenderPhrase phrase, bool rendered)> newPhraseBlocks = [];
+            List<RenderPhrase> renderedPhrases = (
+                from phraseBlock
+                in phraseBlocks
+                where phraseBlock.rendered
+                select phraseBlock.phrase)
+                .ToList();
 
-                if (i < phraseBlocks.Length) {
-                    var oldPhraseBlock = phraseBlocks[i];
-
-                    if (oldPhraseBlock.phrase.hash.Equals(partPhrase.hash) && oldPhraseBlock.rendered) {
-                        newPhraseBlock.rendered = oldPhraseBlock.rendered;
+            foreach (var partPhrase in voicePart.renderPhrases) {
+                // Search for rendered phrase that exists in voicePart
+                foreach (var renderedPhrase in renderedPhrases) {
+                    if (partPhrase.hash == renderedPhrase.hash) {
+                        newPhraseBlocks.Add((partPhrase, true));
+                        break;
                     }
-                    if (oldPhraseBlock.rendered != newPhraseBlock.rendered) requiresVisualUpdate = true;
                 }
-
-                newPhraseBlocks.Add(newPhraseBlock);
+                newPhraseBlocks.Add((partPhrase, false));
             }
 
             phraseBlocks = newPhraseBlocks.ToArray();
