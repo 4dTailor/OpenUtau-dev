@@ -454,7 +454,6 @@ namespace OpenUtau.App.Controls {
         /// startTick/endTick use the absolute position of the phrase.
         /// </summary>
         public void UpdateRenderStatus(int startTick, int endTick, bool rendered) {
-            Log.Debug("Updating render status {0}-{1} to {2}", startTick, endTick, rendered ? "rendered": "unrendered");
             if (startTick > endTick) {
                 Log.Error("StartTick cannot be greater than EndTick in UpdateRenderStatus, update ignored.");
                 return;
@@ -479,7 +478,6 @@ namespace OpenUtau.App.Controls {
         /// Updates render status of phrase if exists, then updates visual if it changes
         /// </summary>
         public void UpdateRenderStatus(RenderPhrase phrase, bool rendered) {
-            Log.Debug("Updating render status {0} to {1}", phrase.position, rendered ? "rendered": "unrendered");
             for (var i = 0; i < phraseBlocks.Length; i++) {
                 var phraseBlock = phraseBlocks[i];
 
@@ -501,7 +499,6 @@ namespace OpenUtau.App.Controls {
         /// <returns>Visual update required</returns>
         public bool RebuildPhraseBlocks(UVoicePart voicePart) {
             bool requiresVisualUpdate = voicePart.renderPhrases.Count != phraseBlocks.Length;
-            Log.Information("Rebuilding phrase blocks for {0}", voicePart.DisplayName);
 
             List<(RenderPhrase phrase, bool rendered)> newPhraseBlocks = [];
             List<RenderPhrase> renderedPhrases = (

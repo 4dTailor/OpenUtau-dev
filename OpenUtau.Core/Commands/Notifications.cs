@@ -216,11 +216,12 @@ namespace OpenUtau.Core {
 
         public override string ToString() => Rendered
             ? $"Phrase Status | {Part.DisplayName} {StartTick}-{EndTick} Rendered"
-            : $"Phrase Status | {Part.DisplayName} {StartTick}-{EndTick} Unrendered ";
+            : $"Phrase Status | {Part.DisplayName} {StartTick}-{EndTick} Unrendered";
     }
 
     public class RebuildPhraseBlocksNotification : UNotification {
         public UVoicePart Part { get; }
+        public override bool Silent => true;
 
         public RebuildPhraseBlocksNotification(UVoicePart part) {
             Part = part;

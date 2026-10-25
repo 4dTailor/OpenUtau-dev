@@ -2210,7 +2210,7 @@ namespace OpenUtau.App.Views {
                         phraseRenderNotif.Rendered);
                 }
             } else if (cmd is RebuildPhraseBlocksNotification phraseBlocksNotif) {
-                partsCanvas.RebuildPhraseBlocksEvent(phraseBlocksNotif.Part);
+                partsCanvas.HandleRebuildPhraseBlocksEvent(phraseBlocksNotif.Part);
             } else if (cmd is TrackChangeSingerCommand changeSingerCommand) {
                 partsCanvas.SetAllRenderPhrases(changeSingerCommand.track, false);
             } else if (cmd is MovePartCommand movePartCommand) {

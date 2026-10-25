@@ -221,7 +221,7 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        public void RebuildPhraseBlocksEvent(UVoicePart part) {
+        public void HandleRebuildPhraseBlocksEvent(UVoicePart part) {
             foreach (var control in partControls) {
                 if (control.Key.Equals(part)) {
                     if (control.Value.RebuildPhraseBlocks(part)) {
