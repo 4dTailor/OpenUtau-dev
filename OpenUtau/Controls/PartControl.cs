@@ -498,8 +498,6 @@ namespace OpenUtau.App.Controls {
         /// <param name="voicePart">VoicePart to check render blocks by</param>
         /// <returns>Visual update required</returns>
         public bool RebuildPhraseBlocks(UVoicePart voicePart) {
-            bool requiresVisualUpdate = voicePart.renderPhrases.Count != phraseBlocks.Length;
-
             List<(RenderPhrase phrase, bool rendered)> newPhraseBlocks = [];
             List<RenderPhrase> renderedPhrases = (
                 from phraseBlock
@@ -509,18 +507,24 @@ namespace OpenUtau.App.Controls {
                 .ToList();
 
             foreach (var partPhrase in voicePart.renderPhrases) {
-                bool added = false;
+                bool rendered = false;
                 // Search for rendered phrase that exists in voicePart
                 foreach (var renderedPhrase in renderedPhrases) {
                     if (partPhrase.hash == renderedPhrase.hash) {
-                        newPhraseBlocks.Add((partPhrase, true));
-                        added = true;
+                        rendered = true;
                         break;
                     }
                 }
+                newPhraseBlocks.Add((partPhrase, rendered));
+            }
 
-                if (!added) {
-                    newPhraseBlocks.Add((partPhrase, false));
+            bool requiresVisualUpdate = newPhraseBlocks.Count != phraseBlocks.Length;
+            if (!requiresVisualUpdate) {
+                for (int i = 0; i < phraseBlocks.Length; i++) {
+                    if (phraseBlocks[i].rendered != newPhraseBlocks[i].rendered) {
+                        requiresVisualUpdate = true;
+                        break;
+                    }
                 }
             }
 
