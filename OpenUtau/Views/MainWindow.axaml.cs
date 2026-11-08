@@ -597,12 +597,18 @@ namespace OpenUtau.App.Views {
         async void OnMenuExportUstx(object sender, RoutedEventArgs e) {
             var project = DocManager.Inst.Project;
             if (await WarnToSave(project)) {
-                var name = Path.GetFileNameWithoutExtension(project.FilePath);
-                var path = Path.GetDirectoryName(project.FilePath);
+                var dialog = new ExportUstxDialog(project);
+                dialog.Show(this);
 
-                var file = await FilePicker.SaveFileAboutProject(this, "menu.file.saveas", FilePicker.USTX);
-                if (!string.IsNullOrEmpty(file)) {
-                    viewModel.SaveProject(file);
+                var result = this;
+
+                if (result != null) {
+                    var file = await FilePicker.SaveFileAboutProject(this, "menu.file.saveas", FilePicker.USTX);
+                    if (!string.IsNullOrEmpty(file)) {
+                        //TODO: Write system to create exported file
+                    }
+                } else {
+                    //TODO: maybe consider writing something when user cancels export.
                 }
             }
         }
