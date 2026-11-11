@@ -399,6 +399,15 @@ namespace OpenUtau.Core {
             }
         }
 
+        public void ExecuteWithinUndoGroup(string? nameKey, bool deferValidate, Action function) {
+            try {
+                StartUndoGroup(nameKey, deferValidate);
+                function.Invoke();
+            } finally {
+                EndUndoGroup();
+            }
+        }
+
         /// <summary>
         /// The commands of a group in order of first appearance, with repeats
         /// counted, e.g. "Move 1 notes x85, Change 1 notes duration x3".

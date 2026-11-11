@@ -33,12 +33,12 @@ namespace OpenUtau.Core.Editing {
             if (toAdd.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             foreach (var note in toAdd) {
                 note.lyric = lyric;
                 docManager.ExecuteCmd(new AddNoteCommand(part, note));
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -64,12 +64,12 @@ namespace OpenUtau.Core.Editing {
             if (toRemove.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             foreach (var note in toRemove) {
                 note.lyric = lyric;
                 docManager.ExecuteCmd(new RemoveNoteCommand(part, note));
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -109,12 +109,12 @@ namespace OpenUtau.Core.Editing {
             if (toAdd.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             foreach (var note in toAdd) {
                 note.lyric = lyric;
                 docManager.ExecuteCmd(new AddNoteCommand(part, note));
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -131,11 +131,11 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             foreach (var note in notes) {
                 docManager.ExecuteCmd(new MoveNoteCommand(part, note, 0, deltaNoteNum));
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -152,7 +152,7 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             foreach (var note in notes) {
                 int pos = note.position;
                 int end = note.End;
@@ -165,7 +165,7 @@ namespace OpenUtau.Core.Editing {
                     docManager.ExecuteCmd(new ResizeNoteCommand(part, note, newEnd - newPos - note.duration));
                 }
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -181,11 +181,11 @@ namespace OpenUtau.Core.Editing {
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             notes.Sort((a, b) => a.position.CompareTo(b.position));
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             for (int i = 0; i < notes.Count - 1; i++) {
                 docManager.ExecuteCmd(new ResizeNoteCommand(part, notes[i], notes[i + 1].position - notes[i].position - notes[i].duration));
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -208,7 +208,7 @@ namespace OpenUtau.Core.Editing {
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note");
+            
             var currentNote = notes[0];
             foreach (var note in notes.Skip(1)) {
                 if (note.position == currentNote.position) {
@@ -225,7 +225,7 @@ namespace OpenUtau.Core.Editing {
                     currentNote = note;
                 }
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -285,12 +285,12 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var pinyinResult = BaseChinesePhonemizer.Romanize(selectedNotes.Select(note => note.lyric));
-            docManager.StartUndoGroup("command.batch.lyric", true);
+            
             foreach (var t in Enumerable.Zip(selectedNotes, pinyinResult,
                 (note, pinyin) => Tuple.Create(note, pinyin))) {
                 docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, t.Item1, t.Item2));
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -309,7 +309,7 @@ namespace OpenUtau.Core.Editing {
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             var track = project.tracks[part.trackNo];
             foreach (var note in notes) {
                 foreach (UPhoneme phoneme in part.phonemes) {
@@ -325,7 +325,7 @@ namespace OpenUtau.Core.Editing {
                     }
                 }
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -342,7 +342,7 @@ namespace OpenUtau.Core.Editing {
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             const int maxTick = 20;
             int delta;
             Random random = new Random();
@@ -364,7 +364,7 @@ namespace OpenUtau.Core.Editing {
                 docManager.ExecuteCmd(new MoveNoteCommand(part, note, delta, 0));
                 docManager.ExecuteCmd(new ResizeNoteCommand(part, note, -delta));
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -381,7 +381,7 @@ namespace OpenUtau.Core.Editing {
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             const int maxTick = 20 ;
             Random random = new Random();
             foreach (var note in notes) {
@@ -404,7 +404,7 @@ namespace OpenUtau.Core.Editing {
                     }
                 }
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -423,7 +423,7 @@ namespace OpenUtau.Core.Editing {
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             Random random = new Random();
             foreach (var note in notes) {
                 if (random.Next(2) == 0) { // +
@@ -433,7 +433,7 @@ namespace OpenUtau.Core.Editing {
                     docManager.ExecuteCmd(new ChangeNoteTuningCommand(part, note, -delta));
                 }
             }
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -618,9 +618,9 @@ namespace OpenUtau.Core.Editing {
                     all.Add(new ReplaceMaskedCurveCommand(part, Format.Ustx.RPIT, curve));
                 }
                 if (recordUndo) {
-                    docManager.StartUndoGroup("command.batch.note", true);
+                    
                     all.ForEach(docManager.ExecuteCmd);
-                    docManager.EndUndoGroup();
+                    
                 } else {
                     docManager.ApplyTransient(all, validateOptions, preRender: !fastRealtime);
                 }
@@ -890,7 +890,7 @@ namespace OpenUtau.Core.Editing {
                             pitch);
                 }
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            
             //Apply pitch points to notes
             foreach (var note in notes) {
                 if (pitchPointsPerNote.TryGetValue(note.position, out var tickRangeAndPitch)) {
@@ -926,7 +926,7 @@ namespace OpenUtau.Core.Editing {
             }
             //Clear MOD+ expressions for selected notes
             docManager.ExecuteCmd(new SetNotesSameExpressionCommand(DocManager.Inst.Project, project.tracks[part.trackNo], part, notes, "mod+", null));
-            docManager.EndUndoGroup();
+            
         }
     }
 
@@ -1007,9 +1007,9 @@ namespace OpenUtau.Core.Editing {
                         newYsDict[kv.Key].ToArray(),
                         true))
                     .ToList();
-                docManager.StartUndoGroup("command.batch.note", true);
+                
                 commands.ForEach(docManager.ExecuteCmd);
-                docManager.EndUndoGroup();
+                
             });
         }
     }

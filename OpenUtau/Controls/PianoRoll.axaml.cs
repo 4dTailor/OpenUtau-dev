@@ -96,6 +96,7 @@ namespace OpenUtau.App.Controls {
                 if (NotesVm == null || NotesVm.Part == null) {
                     return;
                 }
+
                 try {
                     if (edit.IsAsync) {
                         var mainWindow =
@@ -105,11 +106,14 @@ namespace OpenUtau.App.Controls {
                         await MessageBox.ShowProcessing(RootWindow, $"{name} - ? / ?",
                             ThemeManager.GetString("pianoroll.menu.batch.running"),
                             (messageBox, cancellationToken) => {
-                                edit.RunAsync(NotesVm.Project, NotesVm.Part,
-                                    NotesVm.Selection.ToList(), DocManager.Inst,
-                                    (current, total) => {
-                                        messageBox.SetText($"{name}: {current} / {total}");
-                                    }, cancellationToken);
+                                DocManager.Inst.ExecuteWithinUndoGroup(edit.Name, true, () =>
+                                    edit.RunAsync(
+                                        NotesVm.Project, NotesVm.Part,
+                                        NotesVm.Selection.ToList(), DocManager.Inst,
+                                        (current, total) => messageBox.SetText($"{name}: {current} / {total}"),
+                                        cancellationToken
+                                    )
+                                );
                             },
                             (Task t) => {
                                 var e = t.Exception;
@@ -124,11 +128,12 @@ namespace OpenUtau.App.Controls {
                             }
                         );
                     } else {
-                        edit.Run(NotesVm.Project, NotesVm.Part, NotesVm.Selection.ToList(),
-                            DocManager.Inst);
+                        DocManager.Inst.ExecuteWithinUndoGroup(edit.Name, true, () =>
+                            edit.Run(NotesVm.Project, NotesVm.Part, NotesVm.Selection.ToList(), DocManager.Inst));
                     }
                 } catch (Exception e) {
-                    var customEx = new MessageCustomizableException("Failed to run editing macro", "<translate:errors.failed.runeditingmacro>", e);
+                    var customEx = new MessageCustomizableException("Failed to run editing macro",
+                        "<translate:errors.failed.runeditingmacro>", e);
                     DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
                 }
 
@@ -515,7 +520,7 @@ namespace OpenUtau.App.Controls {
                     if (!string.IsNullOrWhiteSpace(value)) {
                         var edit = new Core.Editing.AddBreathNote(value);
                         try {
-                            edit.Run(notesVM.Project, notesVM.Part, notesVM.Selection.ToList(), DocManager.Inst);
+                            DocManager.Inst.ExecuteWithinUndoGroup(edit.Name, true, () => edit.Run(notesVM.Project, notesVM.Part, notesVM.Selection.ToList(), DocManager.Inst));
                         } catch (Exception e) {
                             var customEx = new MessageCustomizableException("Failed to run editing macro", "<translate:errors.failed.runeditingmacro>", e);
                             DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
@@ -533,7 +538,7 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             var edit = new QuantizeNotes(notesVM.Project.resolution * 4 / notesVM.SnapDiv);
-            edit.Run(notesVM.Project, notesVM.Part, notesVM.Selection.ToList(), DocManager.Inst);
+            DocManager.Inst.ExecuteWithinUndoGroup(edit.Name, true, () => edit.Run(notesVM.Project, notesVM.Part, notesVM.Selection.ToList(), DocManager.Inst));
         }
 
         void RandomizeTuning() {
@@ -545,7 +550,7 @@ namespace OpenUtau.App.Controls {
             dialog.onFinish = value => {
                 try {
                     var edit = new RandomizeTuning((int)value);
-                    edit.Run(notesVM.Project, notesVM.Part, notesVM.Selection.ToList(), DocManager.Inst);
+                    DocManager.Inst.ExecuteWithinUndoGroup(edit.Name, true, () => edit.Run(notesVM.Project, notesVM.Part, notesVM.Selection.ToList(), DocManager.Inst));
                 } catch (Exception e) {
                     var customEx = new MessageCustomizableException("Failed to run editing macro", "<translate:errors.failed.runeditingmacro>", e);
                     DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
@@ -563,7 +568,7 @@ namespace OpenUtau.App.Controls {
             dialog.onFinish = value => {
                 var edit = new Core.Editing.LengthenCrossfade(value);
                 try {
-                    edit.Run(notesVM.Project, notesVM.Part, notesVM.Selection.ToList(), DocManager.Inst);
+                    DocManager.Inst.ExecuteWithinUndoGroup(edit.Name, true, () => edit.Run(notesVM.Project, notesVM.Part, notesVM.Selection.ToList(), DocManager.Inst));
                 } catch (Exception e) {
                     var customEx = new MessageCustomizableException("Failed to run editing macro", "<translate:errors.failed.runeditingmacro>", e);
                     DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
