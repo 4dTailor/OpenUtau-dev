@@ -2129,6 +2129,7 @@ namespace OpenUtau.App.Views {
                 }
                 pianoRollWindow?.Close();
                 forceClose = true;
+                DocManager.Inst.DeleteAutoSave();
                 Close();
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }

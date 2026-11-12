@@ -280,6 +280,30 @@ namespace OpenUtau.Core {
             }
         }
 
+        public void DeleteAutoSave() {
+            try {
+                bool untitled = string.IsNullOrEmpty(Project.FilePath);
+                if (untitled) {
+                    Directory.CreateDirectory(PathManager.Inst.BackupsPath);
+                }
+
+                string dir = untitled
+                    ? PathManager.Inst.BackupsPath
+                    : Path.GetDirectoryName(Project.FilePath);
+                string filename = untitled
+                    ? "Untitled"
+                    : Path.GetFileNameWithoutExtension(Project.FilePath);
+
+                string backup = Path.Join(dir, filename + "-autosave.ustx");
+                Log.Information($"Deleting autosave {backup}.");
+                File.Delete(backup);
+                Log.Information($"Deleted autosave {backup}.");
+                autosavedPoint = undoQueue.LastOrDefault();
+            } catch (Exception e) {
+                Log.Error(e, "Autosave deletion failed.");
+            }
+        }
+
         // Every validate path: rebuild derived data, release unused singers,
         // mark the render projections stale.
         private void ValidateAndRefresh() {
