@@ -271,6 +271,12 @@ namespace OpenUtau.App.Views {
             dialog.ShowDialog(this);
         }
 
+        void OnMenuShowProjectInfo(object sender, RoutedEventArgs e) {
+            var project = DocManager.Inst.Project;
+            var dialog = new ProjectInfo();
+            dialog.ShowDialog(this);
+        }
+
         private void AddTimeSigChange(int bar) {
             var project = DocManager.Inst.Project;
             var timeSig = project.timeAxis.TimeSignatureAtBar(bar);

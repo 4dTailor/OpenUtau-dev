@@ -1,0 +1,32 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="175"
+        MinWidth="300" MinHeight="175" Width="300" Height="175"
+        WindowStartupLocation="CenterOwner"
+        x:Class="OpenUtau.App.Controls.ProjectInfo"
+        Title="ProjectInfo">
+  <Window.Styles>
+    <Style Selector="StackPanel > Border">
+      <Setter Property="Margin" Value="4"/>
+      <Setter Property="Padding" Value="4"/>
+      <Setter Property="BorderBrush" Value="Gray"/>
+      <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+  </Window.Styles>
+
+  <StackPanel Orientation="Vertical">
+    <StackPanel Orientation="Horizontal">
+      <Border MinHeight="80" MinWidth="80"
+               BorderBrush="Gray" BorderThickness="1" Margin="4"/>
+
+      <StackPanel Margin="4">
+        <TextBlock Text="Square"/>
+        <TextBox/>
+      </StackPanel>
+    </StackPanel>
+    <TextBox Margin="4" HorizontalAlignment="Stretch"/>
+    <Path Height="50"/>
+  </StackPanel>
+</Window>
