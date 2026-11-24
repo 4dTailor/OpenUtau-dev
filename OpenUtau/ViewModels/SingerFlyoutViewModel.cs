@@ -384,6 +384,12 @@ namespace OpenUtau.App.ViewModels {
             DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), false, "singer"));
         }
 
+        public void SelectRandomSinger() {
+            int index = new Random((int)(0401 * DateTime.Now.Ticks)).Next(0, Tiles.Count - 1);
+            var randomTile = Tiles[index];
+            Select(randomTile);
+        }
+
         // Subscribed only while the flyout is open, so the grid follows singer rescans and installs.
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is SingersChangedNotification ||

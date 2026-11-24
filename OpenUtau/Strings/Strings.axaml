@@ -963,6 +963,7 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singers.readme">Open readme.txt</system:String>
   <system:String x:Key="singers.readme.notfound">readme.txt not found.</system:String>
   <system:String x:Key="singers.refresh">Refresh</system:String>
+  <system:String x:Key="singers.random">Random Singer</system:String>
   <system:String x:Key="singers.setdefaultphonemizer">Set Default Phonemizer</system:String>
   <system:String x:Key="singers.setencoding">Set Encoding</system:String>
   <system:String x:Key="singers.setimage">Set Icon</system:String>
